@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import HomePage from './components/Home/HomePage';
 import LoginForm from './components/Auth/LoginForm';
+import RegisterForm from './components/Auth/RegisterForm';
 import ForgotPasswordForm from './components/Auth/ForgotPasswordForm';
 import Sidebar from './components/Layout/Sidebar';
 import StudentDashboard from './components/Student/StudentDashboard';
@@ -12,9 +14,18 @@ import ClassListInstructor from './components/Instructor/ClassListInstructor';
 import ProjectListInstructor from './components/Instructor/ProjectListInstructor';
 import EvaluationForm from './components/Instructor/EvaluationForm';
 import AnnouncementsPage from './components/Instructor/AnnouncementsPage';
+import GroupManagement from './components/Instructor/GroupManagement';
+import TopicProposalReview from './components/Instructor/TopicProposalReview';
+import MilestoneManagement from './components/Instructor/MilestoneManagement';
+import GradingPage from './components/Instructor/GradingPage';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import UserManagement from './components/Admin/UserManagement';
+import UserManagementEnhanced from './components/Admin/UserManagementEnhanced';
 import ReportsPage from './components/Admin/ReportsPage';
+import ClassManagement from './components/Admin/ClassManagement';
+import HallOfFame from './components/Admin/HallOfFame';
+import SystemSettings from './components/Admin/SystemSettings';
+import ProjectMonitoring from './components/Admin/ProjectMonitoring';
 import ProjectForm from './components/Student/ProjectForm';
 import ProjectDetail from './components/Student/ProjectDetail';
 import { mockProjects } from './data/mockData';
@@ -24,6 +35,8 @@ const AppContent: React.FC = () => {
   const { user } = useAuth();
   const [activeItem, setActiveItem] = useState('dashboard');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showHomePage, setShowHomePage] = useState(true);
   const [currentProject, setCurrentProject] = useState(null);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [showProjectForm, setShowProjectForm] = useState(false);
@@ -31,10 +44,49 @@ const AppContent: React.FC = () => {
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
 
   if (!user) {
-    if (showForgotPassword) {
-      return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
+    if (showHomePage && !showForgotPassword && !showRegister) {
+      return (
+        <HomePage 
+          onLogin={() => setShowHomePage(false)} 
+          onGetStarted={() => setShowHomePage(false)} 
+        />
+      );
     }
-    return <LoginForm onForgotPassword={() => setShowForgotPassword(true)} />;
+    if (showRegister) {
+      return (
+        <RegisterForm 
+          onBack={() => {
+            setShowRegister(false);
+            setShowHomePage(false);
+          }}
+          onSuccess={() => {
+            setShowRegister(false);
+            setShowHomePage(false);
+          }}
+          onBackToHome={() => {
+            setShowRegister(false);
+            setShowHomePage(true);
+          }}
+        />
+      );
+    }
+    if (showForgotPassword) {
+      return (
+        <ForgotPasswordForm 
+          onBack={() => {
+            setShowForgotPassword(false);
+            setShowHomePage(false);
+          }} 
+        />
+      );
+    }
+    return (
+      <LoginForm 
+        onForgotPassword={() => setShowForgotPassword(true)}
+        onRegister={() => setShowRegister(true)}
+        onBackToHome={() => setShowHomePage(true)}
+      />
+    );
   }
 
   const handleNavigate = (item: string) => {
@@ -156,6 +208,30 @@ const AppContent: React.FC = () => {
         }
         break;
 
+      case 'groups':
+        if (user.role === 'instructor') {
+          return <GroupManagement />;
+        }
+        break;
+
+      case 'proposals':
+        if (user.role === 'instructor') {
+          return <TopicProposalReview />;
+        }
+        break;
+
+      case 'milestones':
+        if (user.role === 'instructor') {
+          return <MilestoneManagement />;
+        }
+        break;
+
+      case 'grading':
+        if (user.role === 'instructor') {
+          return <GradingPage />;
+        }
+        break;
+
       case 'announcements':
         if (user.role === 'instructor' || user.role === 'admin') {
           return <AnnouncementsPage onBack={() => handleNavigate('dashboard')} />;
@@ -164,7 +240,31 @@ const AppContent: React.FC = () => {
 
       case 'users':
         if (user.role === 'admin') {
-          return <UserManagement onBack={() => handleNavigate('dashboard')} />;
+          return <UserManagementEnhanced />;
+        }
+        break;
+
+      case 'admin-classes':
+        if (user.role === 'admin') {
+          return <ClassManagement />;
+        }
+        break;
+
+      case 'monitoring':
+        if (user.role === 'admin') {
+          return <ProjectMonitoring />;
+        }
+        break;
+
+      case 'halloffame':
+        if (user.role === 'admin') {
+          return <HallOfFame />;
+        }
+        break;
+
+      case 'settings':
+        if (user.role === 'admin') {
+          return <SystemSettings />;
         }
         break;
 

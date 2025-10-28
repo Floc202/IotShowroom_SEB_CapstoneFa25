@@ -9,6 +9,70 @@ export interface User {
   status: 'active' | 'inactive';
 }
 
+export interface Group {
+  id: string;
+  name: string;
+  classId: string;
+  leaderId: string;
+  leaderName: string;
+  members: GroupMember[];
+  maxMembers: number;
+  description?: string;
+  topicProposal?: TopicProposal;
+  createdAt: string;
+  status: 'active' | 'inactive';
+}
+
+export interface GroupMember {
+  id: string;
+  studentId: string;
+  studentName: string;
+  email: string;
+  role: 'leader' | 'member';
+  joinedAt: string;
+}
+
+export interface TopicProposal {
+  id: string;
+  groupId: string;
+  title: string;
+  description: string;
+  objectives: string[];
+  technologies: string[];
+  timeline: string;
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'revision_required' | 'rejected';
+  feedback?: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+}
+
+export interface Milestone {
+  id: string;
+  classId: string;
+  groupId?: string; // null = áp dụng cho cả lớp, có giá trị = riêng cho nhóm
+  name: string;
+  description: string;
+  deadline: string;
+  weight: number; // % trọng số, tổng phải = 100%
+  order: number;
+  isFinalProject: boolean;
+  submissions: MilestoneSubmission[];
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface MilestoneSubmission {
+  id: string;
+  milestoneId: string;
+  groupId: string;
+  documents: ProjectAsset[];
+  submittedAt: string;
+  score?: number;
+  feedback?: string;
+  status: 'submitted' | 'graded' | 'late';
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -48,10 +112,14 @@ export interface Class {
   instructorId: string;
   studentCount: number;
   projectCount: number;
+  groupCount: number;
+  maxGroups?: number;
+  maxMembersPerGroup: number;
   status: 'active' | 'archived';
   description?: string;
   enrolledStudents: string[];
   createdAt: string;
+  createdBy: string; // Admin ID
 }
 
 export interface Evaluation {
@@ -78,8 +146,10 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
-  audience: 'all' | 'class' | 'role';
+  audience: 'all' | 'class' | 'group' | 'student';
   targetClass?: string;
+  targetGroup?: string;
+  targetStudent?: string;
   targetRole?: 'student' | 'instructor' | 'admin';
   createdAt: string;
   createdBy: string;

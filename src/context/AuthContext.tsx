@@ -19,27 +19,46 @@ export const useAuth = () => {
 };
 
 // Mock users for demo
+// Tài khoản demo:
+// Admin: admin@iot.edu / admin123
+// Instructor: instructor@iot.edu / instructor123
+// Student: student@iot.edu / student123
+
 const mockUsers: User[] = [
   {
     id: '1',
-    name: 'John Smith',
-    email: 'admin@university.edu',
+    name: 'Nguyễn Văn Admin',
+    email: 'admin@iot.edu',
     role: 'admin',
-    phone: '(555) 123-4567',
+    phone: '0901234567',
+    createdAt: '2024-09-01T00:00:00Z',
+    status: 'active',
   },
   {
     id: '2',
-    name: 'Dr. Sarah Johnson',
-    email: 'instructor@university.edu',
+    name: 'TS. Trần Thị Hương',
+    email: 'instructor@iot.edu',
     role: 'instructor',
+    phone: '0912345678',
+    createdAt: '2024-09-01T00:00:00Z',
+    status: 'active',
   },
   {
     id: '3',
-    name: 'Alex Chen',
-    email: 'student@university.edu',
+    name: 'Lê Minh Student',
+    email: 'student@iot.edu',
     role: 'student',
+    phone: '0923456789',
+    createdAt: '2024-09-15T00:00:00Z',
+    status: 'active',
   },
 ];
+
+const DEMO_PASSWORD = {
+  'admin@iot.edu': 'admin123',
+  'instructor@iot.edu': 'instructor123',
+  'student@iot.edu': 'student123',
+};
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -50,6 +69,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Check credentials
+    const validPassword = DEMO_PASSWORD[email as keyof typeof DEMO_PASSWORD];
+    if (!validPassword || validPassword !== password) {
+      setIsLoading(false);
+      return false;
+    }
     
     const foundUser = mockUsers.find(u => u.email === email);
     

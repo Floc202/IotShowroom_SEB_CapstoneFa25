@@ -11,6 +11,11 @@ import {
   BarChart3,
   LogOut,
   Home,
+  Target,
+  FileCheck,
+  ClipboardCheck,
+  Trophy,
+  Monitor,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -34,8 +39,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick }) => {
       case 'instructor':
         return [
           { id: 'dashboard', icon: Home, label: 'Dashboard' },
-          { id: 'classes', icon: BookOpen, label: 'My Classes' },
-          { id: 'evaluation', icon: FolderOpen, label: 'Evaluation' },
+          { id: 'classes', icon: BookOpen, label: 'Classes' },
+          { id: 'groups', icon: Users, label: 'Groups' },
+          { id: 'proposals', icon: ClipboardCheck, label: 'Proposals' },
+          { id: 'milestones', icon: Target, label: 'Milestones' },
+          { id: 'grading', icon: FileCheck, label: 'Grading' },
           { id: 'announcements', icon: MessageSquare, label: 'Announcements' },
           { id: 'profile', icon: User, label: 'Profile' },
         ];
@@ -43,9 +51,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick }) => {
         return [
           { id: 'dashboard', icon: Home, label: 'Dashboard' },
           { id: 'users', icon: Users, label: 'User Management' },
+          { id: 'admin-classes', icon: BookOpen, label: 'Classes' },
+          { id: 'monitoring', icon: Monitor, label: 'Project Monitoring' },
+          { id: 'halloffame', icon: Trophy, label: 'Hall of Fame' },
           { id: 'announcements', icon: MessageSquare, label: 'Announcements' },
           { id: 'reports', icon: BarChart3, label: 'Reports' },
-          { id: 'settings', icon: Settings, label: 'Settings' },
+          { id: 'settings', icon: Settings, label: 'System Settings' },
         ];
       default:
         return [];
