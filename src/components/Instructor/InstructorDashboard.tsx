@@ -31,53 +31,53 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
 
   const stats = [
     {
-      title: 'Lớp học đang dạy',
+      title: 'Teaching Classes',
       value: instructorClasses.length.toString(),
       icon: BookOpen,
       color: 'bg-blue-500',
-      trend: 'Học kỳ này',
+      trend: 'This semester',
     },
     {
-      title: 'Tổng sinh viên',
+      title: 'Total Students',
       value: totalStudents.toString(),
       icon: Users,
       color: 'bg-emerald-500',
-      trend: `${totalGroups} nhóm`,
+      trend: `${totalGroups} groups`,
     },
     {
-      title: 'Chờ chấm điểm',
+      title: 'Pending Grading',
       value: pendingGrading.toString(),
       icon: FileCheck,
       color: 'bg-orange-500',
-      trend: pendingProposals.length > 0 ? `${pendingProposals.length} đề xuất chờ duyệt` : 'Tất cả đã duyệt',
+      trend: pendingProposals.length > 0 ? `${pendingProposals.length} proposals pending` : 'All approved',
     },
     {
-      title: 'Điểm trung bình',
+      title: 'Average Score',
       value: '82%',
       icon: TrendingUp,
       color: 'bg-purple-500',
-      trend: 'Cả lớp',
+      trend: 'All classes',
     },
   ];
 
   const recentActivity = [
-    { type: 'submission', message: 'Nhóm Smart Home nộp Milestone 1', class: 'Cơ sở IoT', time: '2 giờ trước', urgent: false },
-    { type: 'proposal', message: 'Đề xuất "Trạm quan trắc thời tiết" chờ duyệt', class: 'Cơ sở IoT', time: '4 giờ trước', urgent: true },
-    { type: 'graded', message: 'Đã chấm Milestone 1 - Nhóm Smart Home', class: 'Cơ sở IoT', time: '1 ngày trước', urgent: false },
-    { type: 'announcement', message: 'Đăng thông báo về deadline Final Project', class: 'Tất cả', time: '2 ngày trước', urgent: false },
+    { type: 'submission', message: 'Smart Home Group submitted Milestone 1', class: 'IoT Fundamentals', time: '2 hours ago', urgent: false },
+    { type: 'proposal', message: 'Proposal "Weather Monitoring Station" pending approval', class: 'IoT Fundamentals', time: '4 hours ago', urgent: true },
+    { type: 'graded', message: 'Graded Milestone 1 - Smart Home Group', class: 'IoT Fundamentals', time: '1 day ago', urgent: false },
+    { type: 'announcement', message: 'Posted announcement about Final Project deadline', class: 'All', time: '2 days ago', urgent: false },
   ];
 
   const upcomingDeadlines = [
-    { milestone: 'Milestone 2: Prototype', class: 'Cơ sở IoT', deadline: '2025-03-15', daysLeft: 45 },
-    { milestone: 'Milestone 3: Testing', class: 'Cơ sở IoT', deadline: '2025-04-15', daysLeft: 76 },
-    { milestone: 'Final Project', class: 'Cơ sở IoT', deadline: '2025-05-15', daysLeft: 106 },
+    { milestone: 'Milestone 2: Prototype', class: 'IoT Fundamentals', deadline: '2025-03-15', daysLeft: 45 },
+    { milestone: 'Milestone 3: Testing', class: 'IoT Fundamentals', deadline: '2025-04-15', daysLeft: 76 },
+    { milestone: 'Final Project', class: 'IoT Fundamentals', deadline: '2025-05-15', daysLeft: 106 },
   ];
 
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Giảng viên</h1>
-        <p className="text-gray-600 mt-2">Chào mừng trở lại, TS. Trần Thị Hương 👋</p>
+        <h1 className="text-3xl font-bold text-gray-900">Instructor Dashboard</h1>
+        <p className="text-gray-600 mt-2">Welcome back, Dr. Tran Thi Huong 👋</p>
       </div>
 
       {/* Stats Grid */}
@@ -104,12 +104,12 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Lớp học của tôi</h2>
+              <h2 className="text-lg font-semibold text-gray-900">My Classes</h2>
               <button
                 onClick={() => onNavigate('classes')}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                Xem tất cả
+                View All
               </button>
             </div>
           </div>
@@ -131,11 +131,11 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
                   <div className="flex items-center gap-4 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
-                      {cls.studentCount} SV
+                      {cls.studentCount} students
                     </span>
                     <span className="flex items-center gap-1">
                       <Target className="w-4 h-4" />
-                      {cls.groupCount} nhóm
+                      {cls.groupCount} groups
                     </span>
                     <span className="text-xs text-gray-500">
                       {cls.semester} {cls.year}
@@ -150,7 +150,7 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
         {/* Pending Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Cần xử lý</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Pending Actions</h2>
           </div>
           <div className="p-6">
             <div className="space-y-3">
@@ -165,8 +165,8 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
                         <Clock className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{pendingProposals.length} đề xuất chờ duyệt</p>
-                        <p className="text-sm text-gray-600">Nhấn để xem chi tiết</p>
+                        <p className="font-semibold text-gray-900">{pendingProposals.length} proposals pending approval</p>
+                        <p className="text-sm text-gray-600">Click to review</p>
                       </div>
                     </div>
                     <span className="text-yellow-600">→</span>
@@ -185,8 +185,8 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
                         <FileCheck className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{pendingGrading} bài chờ chấm điểm</p>
-                        <p className="text-sm text-gray-600">Nhấn để chấm điểm</p>
+                        <p className="font-semibold text-gray-900">{pendingGrading} submissions pending grading</p>
+                        <p className="text-sm text-gray-600">Click to grade</p>
                       </div>
                     </div>
                     <span className="text-orange-600">→</span>
@@ -197,7 +197,7 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
               {pendingProposals.length === 0 && pendingGrading === 0 && (
                 <div className="text-center py-8">
                   <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-                  <p className="text-gray-600">Tất cả công việc đã hoàn thành! 🎉</p>
+                  <p className="text-gray-600">All tasks completed! 🎉</p>
                 </div>
               )}
             </div>
@@ -209,7 +209,7 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
         {/* Recent Activity */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Hoạt động gần đây</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
           </div>
           <div className="p-6">
             <div className="space-y-3">
@@ -246,12 +246,12 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Deadline sắp tới</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Upcoming Deadlines</h2>
               <button
                 onClick={() => onNavigate('milestones')}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                Quản lý
+                Manage
               </button>
             </div>
           </div>
@@ -269,11 +269,11 @@ const InstructorDashboard: React.FC<InstructorDashboardProps> = ({ onNavigate })
                       item.daysLeft < 60 ? 'bg-orange-100 text-orange-800' :
                       'bg-blue-100 text-blue-800'
                     }`}>
-                      {item.daysLeft} ngày
+                      {item.daysLeft} days
                     </span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    {new Date(item.deadline).toLocaleDateString('vi-VN')}
+                    {new Date(item.deadline).toLocaleDateString('en-US')}
                   </p>
                 </div>
               ))}

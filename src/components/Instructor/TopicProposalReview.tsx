@@ -17,7 +17,7 @@ const TopicProposalReview: React.FC = () => {
 
   const handleReview = (action: 'approved' | 'revision_required' | 'rejected') => {
     console.log('Review action:', action, 'Feedback:', feedback);
-    alert(`Đã ${action === 'approved' ? 'duyệt' : action === 'revision_required' ? 'yêu cầu chỉnh sửa' : 'từ chối'} đề xuất`);
+    alert(`Proposal ${action === 'approved' ? 'approved' : action === 'revision_required' ? 'revision required' : 'rejected'}`);
     setSelectedProposal(null);
     setFeedback('');
   };
@@ -32,14 +32,14 @@ const TopicProposalReview: React.FC = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Duyệt đề xuất chủ đề</h1>
-        <p className="text-gray-600 mt-2">Xem xét và phê duyệt đề xuất từ các nhóm sinh viên</p>
+        <h1 className="text-3xl font-bold text-gray-900">Review Topic Proposals</h1>
+        <p className="text-gray-600 mt-2">Review and approve proposals from student groups</p>
       </div>
 
       {/* Class Selection */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Chọn lớp học
+          Select Class
         </label>
         <select
           value={selectedClass}
@@ -63,7 +63,7 @@ const TopicProposalReview: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{statusStats.pending}</p>
-              <p className="text-sm text-gray-600">Chờ duyệt</p>
+              <p className="text-sm text-gray-600">Pending</p>
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@ const TopicProposalReview: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{statusStats.approved}</p>
-              <p className="text-sm text-gray-600">Đã duyệt</p>
+              <p className="text-sm text-gray-600">Approved</p>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ const TopicProposalReview: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{statusStats.revision_required}</p>
-              <p className="text-sm text-gray-600">Cần chỉnh sửa</p>
+              <p className="text-sm text-gray-600">Needs Revision</p>
             </div>
           </div>
         </div>
@@ -96,7 +96,7 @@ const TopicProposalReview: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{statusStats.rejected}</p>
-              <p className="text-sm text-gray-600">Từ chối</p>
+              <p className="text-sm text-gray-600">Rejected</p>
             </div>
           </div>
         </div>
@@ -113,7 +113,7 @@ const TopicProposalReview: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Tất cả ({groups.length})
+            All ({groups.length})
           </button>
           <button
             onClick={() => setFilterStatus('pending')}
@@ -123,7 +123,7 @@ const TopicProposalReview: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Chờ duyệt ({statusStats.pending})
+            Pending ({statusStats.pending})
           </button>
           <button
             onClick={() => setFilterStatus('approved')}
@@ -133,7 +133,7 @@ const TopicProposalReview: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Đã duyệt ({statusStats.approved})
+            Approved ({statusStats.approved})
           </button>
           <button
             onClick={() => setFilterStatus('revision_required')}
@@ -143,7 +143,7 @@ const TopicProposalReview: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Cần sửa ({statusStats.revision_required})
+            Needs Revision ({statusStats.revision_required})
           </button>
         </div>
       </div>
@@ -163,7 +163,7 @@ const TopicProposalReview: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div>
                     <h3 className="font-bold text-gray-900">{group.name}</h3>
-                    <p className="text-sm text-gray-600">Nhóm trưởng: {group.leaderName}</p>
+                    <p className="text-sm text-gray-600">Leader: {group.leaderName}</p>
                   </div>
                   <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
                     proposal.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
@@ -171,9 +171,9 @@ const TopicProposalReview: React.FC = () => {
                     proposal.status === 'revision_required' ? 'bg-orange-100 text-orange-800' :
                     'bg-red-100 text-red-800'
                   }`}>
-                    {proposal.status === 'approved' ? 'Đã duyệt' :
-                     proposal.status === 'pending' ? 'Chờ duyệt' :
-                     proposal.status === 'revision_required' ? 'Cần sửa' : 'Từ chối'}
+                    {proposal.status === 'approved' ? 'Approved' :
+                     proposal.status === 'pending' ? 'Pending' :
+                     proposal.status === 'revision_required' ? 'Needs Revision' : 'Rejected'}
                   </span>
                 </div>
               </div>
@@ -184,7 +184,7 @@ const TopicProposalReview: React.FC = () => {
 
                 <div className="space-y-3 mb-4">
                   <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Mục tiêu:</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Objectives:</h5>
                     <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
                       {proposal.objectives.map((obj, idx) => (
                         <li key={idx}>{obj}</li>
@@ -193,7 +193,7 @@ const TopicProposalReview: React.FC = () => {
                   </div>
 
                   <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Công nghệ:</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Technologies:</h5>
                     <div className="flex flex-wrap gap-2">
                       {proposal.technologies.map((tech, idx) => (
                         <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
@@ -204,14 +204,14 @@ const TopicProposalReview: React.FC = () => {
                   </div>
 
                   <div>
-                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Thời gian:</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Timeline:</h5>
                     <p className="text-sm text-gray-700">{proposal.timeline}</p>
                   </div>
                 </div>
 
                 {proposal.feedback && (
                   <div className="p-3 bg-gray-50 rounded-lg mb-4">
-                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Phản hồi:</h5>
+                    <h5 className="text-sm font-semibold text-gray-900 mb-1">Feedback:</h5>
                     <p className="text-sm text-gray-700">{proposal.feedback}</p>
                   </div>
                 )}
@@ -221,7 +221,7 @@ const TopicProposalReview: React.FC = () => {
                     onClick={() => setSelectedProposal({ group, proposal })}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Xem chi tiết
+                    View Details
                   </button>
                 </div>
               </div>
@@ -233,11 +233,11 @@ const TopicProposalReview: React.FC = () => {
       {filteredGroups.length === 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Không có đề xuất nào</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No proposals</h3>
           <p className="text-gray-600">
             {filterStatus === 'all' 
-              ? 'Chưa có nhóm nào nộp đề xuất chủ đề'
-              : `Không có đề xuất nào ở trạng thái này`}
+              ? 'No groups have submitted topic proposals yet'
+              : `No proposals in this status`}
           </p>
         </div>
       )}
@@ -247,7 +247,7 @@ const TopicProposalReview: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Duyệt đề xuất chủ đề</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Review Topic Proposal</h2>
               <p className="text-gray-600 mt-1">{selectedProposal.group.name}</p>
             </div>
 
@@ -257,7 +257,7 @@ const TopicProposalReview: React.FC = () => {
 
               <div className="space-y-4 mb-6">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Mục tiêu:</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Objectives:</h4>
                   <ul className="list-disc list-inside text-gray-700 space-y-1">
                     {selectedProposal.proposal.objectives.map((obj: string, idx: number) => (
                       <li key={idx}>{obj}</li>
@@ -266,7 +266,7 @@ const TopicProposalReview: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Công nghệ sử dụng:</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Technologies:</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedProposal.proposal.technologies.map((tech: string, idx: number) => (
                       <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg">
@@ -277,19 +277,19 @@ const TopicProposalReview: React.FC = () => {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Thời gian thực hiện:</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Timeline:</h4>
                   <p className="text-gray-700">{selectedProposal.proposal.timeline}</p>
                 </div>
               </div>
 
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Phản hồi / Nhận xét:
+                  Feedback / Comments:
                 </label>
                 <textarea
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Nhập phản hồi cho nhóm sinh viên..."
+                  placeholder="Enter feedback for the student group..."
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -301,21 +301,21 @@ const TopicProposalReview: React.FC = () => {
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  Duyệt
+                  Approve
                 </button>
                 <button
                   onClick={() => handleReview('revision_required')}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
                 >
                   <AlertCircle className="w-5 h-5" />
-                  Yêu cầu chỉnh sửa
+                  Request Revision
                 </button>
                 <button
                   onClick={() => handleReview('rejected')}
                   className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   <XCircle className="w-5 h-5" />
-                  Từ chối
+                  Reject
                 </button>
               </div>
 
@@ -326,7 +326,7 @@ const TopicProposalReview: React.FC = () => {
                 }}
                 className="w-full mt-3 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Đóng
+                Close
               </button>
             </div>
           </div>

@@ -35,13 +35,13 @@ const GradingPage: React.FC = () => {
 
   const handleGrade = () => {
     if (!score || !feedback) {
-      alert('Vui lòng nhập đầy đủ điểm và nhận xét!');
+      alert('Please enter both score and feedback!');
       return;
     }
 
     const numScore = parseFloat(score);
     if (isNaN(numScore) || numScore < 0 || numScore > selectedSubmission.milestoneWeight) {
-      alert(`Điểm phải từ 0 đến ${selectedSubmission.milestoneWeight}!`);
+      alert(`Score must be between 0 and ${selectedSubmission.milestoneWeight}!`);
       return;
     }
 
@@ -51,7 +51,7 @@ const GradingPage: React.FC = () => {
       feedback,
     });
 
-    alert('Đã chấm điểm thành công!');
+    alert('Successfully graded!');
     setSelectedSubmission(null);
     setScore('');
     setFeedback('');
@@ -60,8 +60,8 @@ const GradingPage: React.FC = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Chấm điểm Milestone</h1>
-        <p className="text-gray-600 mt-2">Chấm điểm và phản hồi cho bài nộp của sinh viên</p>
+        <h1 className="text-3xl font-bold text-gray-900">Grade Milestones</h1>
+        <p className="text-gray-600 mt-2">Grade and provide feedback for student submissions</p>
       </div>
 
       {/* Class and Milestone Selection */}
@@ -69,7 +69,7 @@ const GradingPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chọn lớp học
+              Select Class
             </label>
             <select
               value={selectedClass}
@@ -88,14 +88,14 @@ const GradingPage: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Chọn Milestone
+              Select Milestone
             </label>
             <select
               value={selectedMilestone}
               onChange={(e) => setSelectedMilestone(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">Tất cả Milestones</option>
+              <option value="all">All Milestones</option>
               {milestones.map(m => (
                 <option key={m.id} value={m.id}>
                   {m.name} ({m.weight}%)
@@ -108,15 +108,15 @@ const GradingPage: React.FC = () => {
         {/* Stats */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-orange-50 rounded-lg p-4">
-            <p className="text-sm text-gray-600">Chờ chấm</p>
+            <p className="text-sm text-gray-600">Pending</p>
             <p className="text-2xl font-bold text-orange-600">{pendingSubmissions.length}</p>
           </div>
           <div className="bg-emerald-50 rounded-lg p-4">
-            <p className="text-sm text-gray-600">Đã chấm</p>
+            <p className="text-sm text-gray-600">Graded</p>
             <p className="text-2xl font-bold text-emerald-600">{gradedSubmissions.length}</p>
           </div>
           <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-sm text-gray-600">Tổng cộng</p>
+            <p className="text-sm text-gray-600">Total</p>
             <p className="text-2xl font-bold text-blue-600">{allSubmissions.length}</p>
           </div>
         </div>
@@ -130,7 +130,7 @@ const GradingPage: React.FC = () => {
             <div className="p-6 border-b border-gray-200 bg-orange-50">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <FileCheck className="w-5 h-5 text-orange-600" />
-                Chờ chấm điểm ({pendingSubmissions.length})
+                Pending Grading ({pendingSubmissions.length})
               </h2>
             </div>
             <div className="p-6">
@@ -144,25 +144,25 @@ const GradingPage: React.FC = () => {
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-900 mb-1">{submission.groupName}</h3>
                         <p className="text-sm text-gray-600">
-                          {submission.milestoneName} • Trọng số: {submission.milestoneWeight}%
+                          {submission.milestoneName} • Weight: {submission.milestoneWeight}%
                         </p>
                         <p className="text-sm text-gray-600">
-                          Nhóm trưởng: {submission.groupLeader}
+                          Leader: {submission.groupLeader}
                         </p>
                       </div>
                       <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs rounded-full font-medium">
-                        Chờ chấm
+                        Pending
                       </span>
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        Nộp: {new Date(submission.submittedAt).toLocaleDateString('vi-VN')}
+                        Submitted: {new Date(submission.submittedAt).toLocaleDateString('en-US')}
                       </span>
                       <span className="flex items-center gap-1">
                         <FileCheck className="w-4 h-4" />
-                        {submission.documents.length} tài liệu
+                        {submission.documents.length} documents
                       </span>
                     </div>
 
@@ -171,10 +171,10 @@ const GradingPage: React.FC = () => {
                         onClick={() => setSelectedSubmission(submission)}
                         className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                       >
-                        Chấm điểm
+                        Grade
                       </button>
                       <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                        Xem tài liệu
+                        View Documents
                       </button>
                     </div>
                   </div>
@@ -190,7 +190,7 @@ const GradingPage: React.FC = () => {
             <div className="p-6 border-b border-gray-200 bg-emerald-50">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Star className="w-5 h-5 text-emerald-600" />
-                Đã chấm điểm ({gradedSubmissions.length})
+                Graded ({gradedSubmissions.length})
               </h2>
             </div>
             <div className="p-6">
@@ -204,10 +204,10 @@ const GradingPage: React.FC = () => {
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-900 mb-1">{submission.groupName}</h3>
                         <p className="text-sm text-gray-600">
-                          {submission.milestoneName} • Trọng số: {submission.milestoneWeight}%
+                          {submission.milestoneName} • Weight: {submission.milestoneWeight}%
                         </p>
                         <p className="text-sm text-gray-600">
-                          Nhóm trưởng: {submission.groupLeader}
+                          Leader: {submission.groupLeader}
                         </p>
                       </div>
                       <div className="text-right">
@@ -222,7 +222,7 @@ const GradingPage: React.FC = () => {
 
                     {submission.feedback && (
                       <div className="p-3 bg-gray-50 rounded-lg mb-3">
-                        <p className="text-sm font-semibold text-gray-900 mb-1">Nhận xét:</p>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">Feedback:</p>
                         <p className="text-sm text-gray-700">{submission.feedback}</p>
                       </div>
                     )}
@@ -230,7 +230,7 @@ const GradingPage: React.FC = () => {
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        Nộp: {new Date(submission.submittedAt).toLocaleDateString('vi-VN')}
+                        Submitted: {new Date(submission.submittedAt).toLocaleDateString('en-US')}
                       </span>
                     </div>
                   </div>
@@ -243,9 +243,9 @@ const GradingPage: React.FC = () => {
         {allSubmissions.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <FileCheck className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có bài nộp nào</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No submissions yet</h3>
             <p className="text-gray-600">
-              Chưa có sinh viên nào nộp bài cho milestone này
+              No students have submitted work for this milestone
             </p>
           </div>
         )}
@@ -256,7 +256,7 @@ const GradingPage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-              <h2 className="text-2xl font-bold text-gray-900">Chấm điểm Milestone</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Grade Milestone</h2>
               <p className="text-gray-600 mt-1">{selectedSubmission.groupName}</p>
             </div>
 
@@ -265,16 +265,16 @@ const GradingPage: React.FC = () => {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">{selectedSubmission.milestoneName}</h3>
                 <div className="space-y-1 text-sm text-gray-600">
-                  <p>Nhóm trưởng: {selectedSubmission.groupLeader}</p>
-                  <p>Ngày nộp: {new Date(selectedSubmission.submittedAt).toLocaleDateString('vi-VN')}</p>
-                  <p>Trọng số: {selectedSubmission.milestoneWeight}%</p>
-                  <p>Số tài liệu: {selectedSubmission.documents.length}</p>
+                  <p>Leader: {selectedSubmission.groupLeader}</p>
+                  <p>Submitted: {new Date(selectedSubmission.submittedAt).toLocaleDateString('en-US')}</p>
+                  <p>Weight: {selectedSubmission.milestoneWeight}%</p>
+                  <p>Documents: {selectedSubmission.documents.length}</p>
                 </div>
               </div>
 
               {/* Documents */}
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Tài liệu nộp:</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">Submitted Documents:</h4>
                 <div className="space-y-2">
                   {selectedSubmission.documents.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
@@ -300,7 +300,7 @@ const GradingPage: React.FC = () => {
               {/* Score Input */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Điểm (Tối đa: {selectedSubmission.milestoneWeight} điểm)
+                  Score (Maximum: {selectedSubmission.milestoneWeight} points)
                 </label>
                 <input
                   type="number"
@@ -309,7 +309,7 @@ const GradingPage: React.FC = () => {
                   step="0.5"
                   value={score}
                   onChange={(e) => setScore(e.target.value)}
-                  placeholder={`Nhập điểm từ 0 đến ${selectedSubmission.milestoneWeight}`}
+                  placeholder={`Enter score from 0 to ${selectedSubmission.milestoneWeight}`}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-semibold"
                 />
               </div>
@@ -318,12 +318,12 @@ const GradingPage: React.FC = () => {
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                   <MessageSquare className="w-4 h-4" />
-                  Nhận xét / Phản hồi
+                  Feedback / Comments
                 </label>
                 <textarea
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Nhập nhận xét chi tiết cho nhóm sinh viên..."
+                  placeholder="Enter detailed feedback for the student group..."
                   rows={6}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -335,7 +335,7 @@ const GradingPage: React.FC = () => {
                   onClick={handleGrade}
                   className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-semibold"
                 >
-                  Lưu điểm
+                  Save Grade
                 </button>
                 <button
                   onClick={() => {
@@ -345,12 +345,12 @@ const GradingPage: React.FC = () => {
                   }}
                   className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Hủy
+                  Cancel
                 </button>
               </div>
 
               <p className="text-xs text-gray-500 mt-4 text-center">
-                ⚠️ Sau khi công bố điểm, bạn không thể chỉnh sửa lại
+                ⚠️ After publishing grades, you cannot edit them
               </p>
             </div>
           </div>

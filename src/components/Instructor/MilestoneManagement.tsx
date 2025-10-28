@@ -24,7 +24,7 @@ const MilestoneManagement: React.FC = () => {
   };
 
   const handleDeleteMilestone = (milestoneId: string) => {
-    if (confirm('Bạn có chắc muốn xóa milestone này?')) {
+    if (confirm('Are you sure you want to delete this milestone?')) {
       console.log('Deleting milestone:', milestoneId);
     }
   };
@@ -32,14 +32,14 @@ const MilestoneManagement: React.FC = () => {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Quản lý Milestone</h1>
-        <p className="text-gray-600 mt-2">Định nghĩa và quản lý các mốc đánh giá trong học kỳ</p>
+        <h1 className="text-3xl font-bold text-gray-900">Milestone Management</h1>
+        <p className="text-gray-600 mt-2">Define and manage assessment milestones in the semester</p>
       </div>
 
       {/* Class Selection */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Chọn lớp học
+          Select Class
         </label>
         <select
           value={selectedClass}
@@ -56,7 +56,7 @@ const MilestoneManagement: React.FC = () => {
         {/* Weight Summary */}
         <div className="mt-6 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700">Tổng trọng số:</span>
+            <span className="text-sm font-semibold text-gray-700">Total Weight:</span>
             <span className={`text-2xl font-bold ${isWeightValid ? 'text-emerald-600' : 'text-red-600'}`}>
               {totalWeight}%
             </span>
@@ -72,12 +72,12 @@ const MilestoneManagement: React.FC = () => {
             />
           </div>
           <p className="text-xs text-gray-600 mt-2">
-            {isWeightValid ? '✓ Tổng trọng số hợp lệ' : 
-             totalWeight < 100 ? `⚠ Thiếu ${100 - totalWeight}% để đạt 100%` :
-             `⚠ Vượt quá ${totalWeight - 100}%`}
+            {isWeightValid ? '✓ Total weight is valid' : 
+             totalWeight < 100 ? `⚠ Missing ${100 - totalWeight}% to reach 100%` :
+             `⚠ Exceeds by ${totalWeight - 100}%`}
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            * Final Project phải chiếm 40% tổng điểm
+            * Final Project must account for 40% of total grade
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@ const MilestoneManagement: React.FC = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{totalWeight}%</p>
-              <p className="text-sm text-gray-600">Tổng trọng số</p>
+              <p className="text-sm text-gray-600">Total Weight</p>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ const MilestoneManagement: React.FC = () => {
               <p className="text-2xl font-bold text-gray-900">
                 {milestones.filter(m => new Date(m.deadline) > new Date()).length}
               </p>
-              <p className="text-sm text-gray-600">Sắp tới</p>
+              <p className="text-sm text-gray-600">Upcoming</p>
             </div>
           </div>
         </div>
@@ -142,11 +142,11 @@ const MilestoneManagement: React.FC = () => {
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           <Plus className="w-5 h-5" />
-          Thêm Milestone mới
+          Add New Milestone
         </button>
         {!isWeightValid && milestones.length > 0 && (
           <p className="text-sm text-red-600 mt-2">
-            Vui lòng điều chỉnh trọng số các milestone hiện tại trước khi thêm mới
+            Please adjust the weights of current milestones before adding a new one
           </p>
         )}
       </div>
@@ -193,19 +193,19 @@ const MilestoneManagement: React.FC = () => {
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="w-4 h-4 text-gray-500" />
                         <span className={`font-medium ${isPast ? 'text-red-600' : 'text-gray-700'}`}>
-                          Deadline: {new Date(milestone.deadline).toLocaleDateString('vi-VN')}
+                          Deadline: {new Date(milestone.deadline).toLocaleDateString('en-US')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Percent className="w-4 h-4 text-gray-500" />
                         <span className="font-medium text-gray-700">
-                          Trọng số: {milestone.weight}%
+                          Weight: {milestone.weight}%
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Target className="w-4 h-4 text-gray-500" />
                         <span className="font-medium text-gray-700">
-                          {submissionCount} bài nộp • {gradedCount} đã chấm
+                          {submissionCount} submissions • {gradedCount} graded
                         </span>
                       </div>
                     </div>
@@ -215,7 +215,7 @@ const MilestoneManagement: React.FC = () => {
                     <button
                       onClick={() => handleEditMilestone(milestone)}
                       className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="Chỉnh sửa"
+                      title="Edit"
                     >
                       <Edit2 className="w-5 h-5" />
                     </button>
@@ -223,7 +223,7 @@ const MilestoneManagement: React.FC = () => {
                       onClick={() => handleDeleteMilestone(milestone.id)}
                       disabled={milestone.isFinalProject}
                       className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors disabled:text-gray-400 disabled:cursor-not-allowed"
-                      title={milestone.isFinalProject ? 'Không thể xóa Final Project' : 'Xóa'}
+                      title={milestone.isFinalProject ? 'Cannot delete Final Project' : 'Delete'}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -234,7 +234,7 @@ const MilestoneManagement: React.FC = () => {
                 {submissionCount > 0 && (
                   <div className="mt-4 ml-13">
                     <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-gray-600">Tiến độ chấm điểm</span>
+                      <span className="text-gray-600">Grading Progress</span>
                       <span className="font-medium text-gray-900">
                         {gradedCount}/{submissionCount} ({Math.round((gradedCount / submissionCount) * 100)}%)
                       </span>
@@ -256,31 +256,31 @@ const MilestoneManagement: React.FC = () => {
       {milestones.length === 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Chưa có milestone nào</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No milestones yet</h3>
           <p className="text-gray-600 mb-6">
-            Hãy tạo milestone đầu tiên cho lớp học này. <br />
-            Lưu ý: Tổng trọng số phải bằng 100% và Final Project phải chiếm 40%.
+            Create the first milestone for this class. <br />
+            Note: Total weight must equal 100% and Final Project must be 40%.
           </p>
           <button
             onClick={handleCreateMilestone}
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Tạo Milestone đầu tiên
+            Create First Milestone
           </button>
         </div>
       )}
 
       {/* Validation Rules */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-3">📋 Quy tắc Milestone:</h3>
+        <h3 className="font-semibold text-blue-900 mb-3">📋 Milestone Rules:</h3>
         <ul className="space-y-2 text-sm text-blue-800">
-          <li>✓ Tối thiểu 3 milestones (không bao gồm Final Project)</li>
-          <li>✓ Trọng số phải là số nguyên (không có số lẻ)</li>
-          <li>✓ Tổng trọng số các milestone = 100%</li>
-          <li>✓ Final Project luôn chiếm 40% tổng điểm</li>
-          <li>✓ Deadline phải theo thứ tự thời gian</li>
-          <li>✓ Sau khi công bố điểm, không được chỉnh sửa</li>
+          <li>✓ Minimum 3 milestones (excluding Final Project)</li>
+          <li>✓ Weight must be a whole number (no decimals)</li>
+          <li>✓ Total weight of all milestones = 100%</li>
+          <li>✓ Final Project must always be 40% of total grade</li>
+          <li>✓ Deadlines must be in chronological order</li>
+          <li>✓ Cannot edit after grades are published</li>
         </ul>
       </div>
 
@@ -289,9 +289,9 @@ const MilestoneManagement: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              {showCreateModal ? 'Tạo Milestone mới' : 'Chỉnh sửa Milestone'}
+              {showCreateModal ? 'Create New Milestone' : 'Edit Milestone'}
             </h2>
-            <p className="text-gray-600 mb-4">Form tạo/sửa milestone sẽ được implement ở đây...</p>
+            <p className="text-gray-600 mb-4">Milestone creation/editing form will be implemented here...</p>
             <button
               onClick={() => {
                 setShowCreateModal(false);
@@ -300,7 +300,7 @@ const MilestoneManagement: React.FC = () => {
               }}
               className="w-full px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Đóng
+              Close
             </button>
           </div>
         </div>

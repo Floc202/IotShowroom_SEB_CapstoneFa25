@@ -32,23 +32,23 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
   };
 
   const handleDeleteGroup = (groupId: string) => {
-    if (confirm('Bạn có chắc muốn xóa nhóm này?')) {
+    if (confirm('Are you sure you want to delete this group?')) {
       console.log('Deleting group:', groupId);
-      // Logic xóa nhóm
+      // Group deletion logic
     }
   };
 
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Quản lý nhóm</h1>
-        <p className="text-gray-600 mt-2">Quản lý các nhóm sinh viên trong lớp học</p>
+        <h1 className="text-3xl font-bold text-gray-900">Group Management</h1>
+        <p className="text-gray-600 mt-2">Manage student groups in classes</p>
       </div>
 
       {/* Class Selection */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Chọn lớp học
+          Select Class
         </label>
         <select
           value={selectedClass}
@@ -65,19 +65,19 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
         {currentClass && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">Số nhóm hiện tại</p>
+              <p className="text-sm text-gray-600">Current Groups</p>
               <p className="text-2xl font-bold text-blue-600">{groups.length}</p>
             </div>
             <div className="bg-emerald-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">Số nhóm tối đa</p>
+              <p className="text-sm text-gray-600">Max Groups</p>
               <p className="text-2xl font-bold text-emerald-600">{currentClass.maxGroups}</p>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">SV/Nhóm (max)</p>
+              <p className="text-sm text-gray-600">Students/Group (max)</p>
               <p className="text-2xl font-bold text-purple-600">{currentClass.maxMembersPerGroup}</p>
             </div>
             <div className="bg-orange-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">Tổng sinh viên</p>
+              <p className="text-sm text-gray-600">Total Students</p>
               <p className="text-2xl font-bold text-orange-600">{currentClass.studentCount}</p>
             </div>
           </div>
@@ -91,7 +91,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Tìm kiếm nhóm hoặc nhóm trưởng..."
+              placeholder="Search group or leader..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -102,7 +102,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
             className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            Tạo nhóm mới
+            Create New Group
           </button>
         </div>
       </div>
@@ -119,7 +119,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
                       <Users className="w-4 h-4" />
-                      {group.members.length}/{group.maxMembers} thành viên
+                      {group.members.length}/{group.maxMembers} members
                     </span>
                     {group.topicProposal && (
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
@@ -128,9 +128,9 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
                         group.topicProposal.status === 'revision_required' ? 'bg-orange-100 text-orange-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {group.topicProposal.status === 'approved' ? 'Đã duyệt' :
-                         group.topicProposal.status === 'pending' ? 'Chờ duyệt' :
-                         group.topicProposal.status === 'revision_required' ? 'Cần sửa' : 'Từ chối'}
+                        {group.topicProposal.status === 'approved' ? 'Approved' :
+                         group.topicProposal.status === 'pending' ? 'Pending' :
+                         group.topicProposal.status === 'revision_required' ? 'Needs Revision' : 'Rejected'}
                       </span>
                     )}
                   </div>
@@ -139,14 +139,14 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
                   <button
                     onClick={() => handleEditGroup(group)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Chỉnh sửa nhóm"
+                    title="Edit group"
                   >
                     <Edit2 className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDeleteGroup(group.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Xóa nhóm"
+                    title="Delete group"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
@@ -155,7 +155,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
             </div>
 
             <div className="p-6">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Thành viên nhóm</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Group Members</h4>
               <div className="space-y-2">
                 {group.members.map((member: any) => (
                   <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -168,7 +168,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
                           {member.studentName}
                           {member.role === 'leader' && (
                             <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                              Nhóm trưởng
+                              Leader
                             </span>
                           )}
                         </p>
@@ -179,7 +179,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
                       <button
                         onClick={() => console.log('Remove member:', member.id)}
                         className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="Gỡ khỏi nhóm"
+                        title="Remove from group"
                       >
                         <UserMinus className="w-4 h-4" />
                       </button>
@@ -191,7 +191,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
               {group.members.length < group.maxMembers && (
                 <button className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors">
                   <UserPlus className="w-4 h-4" />
-                  Thêm thành viên
+                  Add Member
                 </button>
               )}
             </div>
@@ -203,12 +203,12 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
           <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchTerm ? 'Không tìm thấy nhóm nào' : 'Chưa có nhóm nào'}
+            {searchTerm ? 'No groups found' : 'No groups yet'}
           </h3>
           <p className="text-gray-600 mb-6">
             {searchTerm 
-              ? 'Thử tìm kiếm với từ khóa khác' 
-              : 'Hãy tạo nhóm đầu tiên cho lớp này'}
+              ? 'Try searching with different keywords' 
+              : 'Create the first group for this class'}
           </p>
           {!searchTerm && (
             <button
@@ -216,7 +216,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ classId }) => {
               className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Tạo nhóm mới
+              Create New Group
             </button>
           )}
         </div>
