@@ -13,6 +13,9 @@ import AdminDashboard from "./pages/dashboards/AdminDashboard";
 import ManagerDashboard from "./pages/dashboards/ManagerDashboard";
 import InstructorDashboard from "./pages/dashboards/InstructorDashboard";
 import StudentDashboard from "./pages/dashboards/StudentDashboard";
+import { ROLES } from "./utils/constants";
+import Profile from "./pages/accounts/Profile";
+import Unauthorized from "./pages/auth/Unauthorized";
 
 export default function App() {
   return (
@@ -23,24 +26,29 @@ export default function App() {
             {/* Public / Guest / Instructor / Student */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+
               <Route element={<PublicOnlyRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
               </Route>
 
               {/* Instructor area */}
-              <Route element={<ProtectedRoute allow={["Instructor"]} />}>
+              <Route element={<ProtectedRoute allow={[ROLES.INSTRUCTOR]} />}>
                 <Route path="/instructor" element={<InstructorDashboard />} />
               </Route>
 
               {/* Student area */}
-              <Route element={<ProtectedRoute allow={["Student"]} />}>
+              <Route element={<ProtectedRoute allow={[ROLES.STUDENT]} />}>
                 <Route path="/student" element={<StudentDashboard />} />
               </Route>
             </Route>
 
             {/* Admin + Manager share same layout */}
-            <Route element={<ProtectedRoute allow={["Admin", "Manager"]} />}>
+            <Route
+              element={<ProtectedRoute allow={[ROLES.ADMIN, ROLES.MANAGER]} />}
+            >
               <Route element={<AdminManagerLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/manager" element={<ManagerDashboard />} />

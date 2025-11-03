@@ -9,10 +9,10 @@ export default function ProtectedRoute({
   allow: RoleName | RoleName[];
 }) {
   const { user, loading, hasRole } = useAuth();
-
+  
   if (loading) return <div className="p-8">Loading...</div>;
 
   if (!user) return <Navigate to="/login" replace />;
-  
-  return hasRole(allow) ? <Outlet /> : <Navigate to="/" replace />;
+
+  return hasRole(allow) ? <Outlet /> : <Navigate to="/unauthorized" replace />;
 }

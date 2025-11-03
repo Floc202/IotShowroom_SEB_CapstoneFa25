@@ -1,7 +1,10 @@
+// src/pages/auth/Login.tsx
 import React, { useState } from "react";
-import { Button, Card, Form, Input, message } from "antd";
+import { Button, Card, Form, Input, Checkbox } from "antd";
+import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { getErrorMessage } from "../../utils/helpers";
 import { useAuth } from "../../providers/AuthProvider";
-import { useNavigate } from "react-router-dom";
 
 export default function Login() {
   const { login } = useAuth();
@@ -9,32 +12,67 @@ export default function Login() {
   const navigate = useNavigate();
 
   const onFinish = async (values: any) => {
-    setSubmitting(true);
-    const res = await login(values.email, values.password);
-    setSubmitting(false);
-    if (!res.ok) return message.error(res.message || "Login failed");
-    message.success("Login successful");
-    navigate("/");
+    try {
+      setSubmitting(true);
+      const res = await login(values.email, values.password);
+      if (!res.ok) return toast.error(res.message || "Login failed");
+      toast.success("Login successful");
+      navigate("/");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onFinishFailed = (info: any) => {
+    const first = info?.errorFields?.[0]?.errors?.[0];
+    if (first) toast.error(first);
   };
 
   return (
     <div className="max-w-md mx-auto">
-      <Card title="Sign in" className="shadow">
-        <Form layout="vertical" onFinish={onFinish}>
+      <Card
+        title={<div className="text-lg font-semibold">Đăng nhập</div>}
+        className="shadow"
+      >
+        <Form
+          layout="vertical"
+          onFinish={onFinish}
+          onFinishFailed={onFinishFailed}
+          disabled={submitting}
+        >
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, type: "email" }]}
+            rules={[
+              { required: true, message: "Please enter your email" },
+              { type: "email", message: "Email is not valid!" },
+            ]}
           >
-            <Input placeholder="user@example.com" />
+            <Input placeholder="user@example.com" autoComplete="email" />
           </Form.Item>
+
           <Form.Item
             label="Password"
             name="password"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please enter your password!" }]}
           >
-            <Input.Password placeholder="••••••••" />
+            <Input.Password
+              placeholder="••••••••"
+              autoComplete="current-password"
+            />
           </Form.Item>
+
+          <div className="flex items-center justify-between mb-3">
+            <Form.Item name="remember" valuePropName="checked" noStyle>
+              <Checkbox>Remember?</Checkbox>
+            </Form.Item>
+            <Link to="#" className="text-sm text-blue-600">
+              Forgot password?
+            </Link>
+          </div>
+
           <Button type="primary" htmlType="submit" loading={submitting} block>
             Login
           </Button>
