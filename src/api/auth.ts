@@ -1,0 +1,26 @@
+import api from "./axios";
+import type {
+  ApiEnvelope,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+} from "../types/auth";
+
+export const login = (payload: LoginRequest) =>
+  api.post<LoginResponse>("/Authentication/login", payload).then((r) => r.data);
+
+export const register = (payload: RegisterRequest) =>
+  api
+    .post<ApiEnvelope<null | { userId: number }>>("/register", payload)
+    .then((r) => r.data);
+
+export const logout = () =>
+  api.post<ApiEnvelope<null>>("/logout").then((r) => r.data);
+
+export const refreshToken = (refreshToken: string) =>
+  api
+    .post<ApiEnvelope<{ accessToken: string; refreshToken: string }>>(
+      "/refresh-token",
+      { refreshToken }
+    )
+    .then((r) => r.data);
