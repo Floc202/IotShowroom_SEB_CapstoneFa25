@@ -1,10 +1,10 @@
 import api from "./axios";
 import type {
-  ApiEnvelope,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
 } from "../types/auth";
+import type { ApiEnvelope } from "../types/base";
 
 export const login = (payload: LoginRequest) =>
   api.post<LoginResponse>("/Authentication/login", payload).then((r) => r.data);
@@ -15,7 +15,7 @@ export const register = (payload: RegisterRequest) =>
     .then((r) => r.data);
 
 export const logout = () =>
-  api.post<ApiEnvelope<null>>("/logout").then((r) => r.data);
+  api.post<ApiEnvelope<null>>("/Authentication/logout").then((r) => r.data);
 
 export const refreshToken = (refreshToken: string) =>
   api

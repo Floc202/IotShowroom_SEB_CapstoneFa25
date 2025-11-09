@@ -19,6 +19,7 @@ interface AuthState {
   ) => Promise<{ ok: boolean; message?: string }>;
   logout: () => Promise<void>;
   hasRole: (roles: RoleName | RoleName[]) => boolean;
+  refreshMe: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -29,7 +30,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // bootstrap current user if tokens exist
   useEffect(() => {
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (!token) {
@@ -38,10 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     getMe()
       .then((res) => {
-        if (res.isSuccess) setUser(res.data);
+        if (res.isSuccess) setUser(res.data as Me);
       })
       .catch(() => {
-        // token invalid
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       })
@@ -56,9 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, res.data.refreshToken);
+
       const me = await getMe();
-      if (me.isSuccess) setUser(me.data);
-      return { ok: true };
+
+      if (me.isSuccess) setUser(me.data as Me);
+      return { ok: true, data: res.data };
     } catch (err: any) {
       const msg =
         err?.response?.data?.message || err?.message || "Login failed";
@@ -80,8 +81,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return !!user && list.includes(user.roleName);
   };
 
+  const refreshMe = async () => {
+    const me = await getMe();
+    if (me.isSuccess) setUser(me.data as Me);
+  };
+
   const value = useMemo(
-    () => ({ user, loading, login, logout, hasRole }),
+    () => ({ user, loading, login, logout, hasRole, refreshMe }),
     [user, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

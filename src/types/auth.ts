@@ -1,4 +1,4 @@
-export type RoleName = "Admin" | "Manager" | "Instructor" | "Student";
+export type RoleName = "Admin" | "Instructor" | "Student";
 
 export interface LoginRequest {
   email: string;
@@ -29,15 +29,7 @@ export interface RegisterRequest {
   phone: string;
 }
 
-export interface ApiEnvelope<T> {
-  isSuccess: boolean;
-  responseCode: string;
-  statusCode: number;
-  data: T;
-  message: string;
-}
-
-export interface Me {
+export interface Me { 
   userId: number;
   fullName: string;
   email: string;
