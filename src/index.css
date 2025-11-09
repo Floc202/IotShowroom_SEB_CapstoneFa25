@@ -1,6 +1,11 @@
 @import "tailwindcss";
+@tailwind utilities;
 
+.item-lists {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
 
-:root {
---sidebar-w: 280px;
+.mb-important {
+    margin-bottom: 24px !important;
 }
