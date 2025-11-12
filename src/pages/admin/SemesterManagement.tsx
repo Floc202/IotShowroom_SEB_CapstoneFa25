@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   Button,
@@ -16,7 +16,6 @@ import {
   Popover,
   Popconfirm,
   Tooltip,
-  Card,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs, { Dayjs } from "dayjs";
@@ -36,7 +35,6 @@ import {
   Eye,
   RefreshCcw,
   Plus,
-  CalendarDays,
 } from "lucide-react";
 import { getErrorMessage } from "../../utils/helpers";
 import SemesterDetailModal from "../../components/semesters/SemesterDetailModal";
