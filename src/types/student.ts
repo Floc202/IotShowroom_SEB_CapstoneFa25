@@ -87,7 +87,7 @@ export interface GroupInvitation {
   inviterId: Id;
   inviterName: string;
   message?: string | null;
-  createdAt: string; // ISO
+  createdAt: string;
   expiresAt?: string | null;
 }
 

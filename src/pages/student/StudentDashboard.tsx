@@ -1,4 +1,3 @@
-import React from 'react';
 import { BookOpen, FolderOpen, Bell, TrendingUp } from 'lucide-react';
 
 
