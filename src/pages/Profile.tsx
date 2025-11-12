@@ -1,4 +1,3 @@
-import React from "react";
 import { useAuth } from "../providers/AuthProvider";
 
 export default function Profile() {

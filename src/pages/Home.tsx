@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   ArrowRight,
   CheckCircle,
@@ -13,10 +13,7 @@ import {
   Search,
   Play,
   Trophy,
-  Clock,
   FolderOpen,
-  Github,
-  Mail,
   BookOpen,
 } from 'lucide-react';
 

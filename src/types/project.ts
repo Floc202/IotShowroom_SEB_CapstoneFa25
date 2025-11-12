@@ -4,12 +4,23 @@ export interface ProjectDetail {
   projectId: Id;
   title: string;
   description: string | null;
-  status: string; 
+  status: string;
+  leaderId: Id;
+  leaderName: string;
   groupId: Id;
   groupName: string;
-  createdAt: string; 
-  updatedAt: string | null; 
-  memberNames: string[];
+  createdAt: string;
+  updatedAt: string | null;
+  memberCount: number;
+  members: string[];
+}
+
+export interface MemberInfo {
+  userId: Id;
+  fullName: string;
+  email: string;
+  roleInProject: string;
+  avatarUrl: string | null;
 }
 
 export interface CreateProjectRequest {
@@ -20,7 +31,7 @@ export interface CreateProjectRequest {
 
 export interface UpdateProjectRequest {
   projectId: Id;
-  requesterUserId: Id; 
+  requesterUserId: Id;
   title: string;
   description: string;
 }
@@ -28,6 +39,6 @@ export interface UpdateProjectRequest {
 export interface UpdateProjectStatusRequest {
   projectId: Id;
   instructorId: Id;
-  status: string; 
+  status: string;
   comment: string;
 }

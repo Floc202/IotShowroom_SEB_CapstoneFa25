@@ -1,5 +1,4 @@
-// src/pages/account/Profile.tsx
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Avatar,
   Card,
@@ -103,7 +102,7 @@ export default function Profile() {
         fullName: vals.fullName?.trim() || undefined,
         phone: vals.phone?.trim() || undefined,
         newPassword: vals.newPassword ? vals.newPassword : undefined,
-        avatarUrl, // chỉ gửi nếu có file mới
+        avatarUrl,
       };
 
       const res = await updateUser(user.userId, payload);

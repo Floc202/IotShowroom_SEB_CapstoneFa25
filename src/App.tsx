@@ -1,4 +1,3 @@
-import React from "react";
 import { ConfigProvider } from "antd";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./providers/AuthProvider";
@@ -22,6 +21,9 @@ import ClassManagement from "./pages/admin/ClassManagement";
 import StudentClassManagement from "./pages/student/StudentClassManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import StudentClassDetail from "./pages/student/StudentClassDetail";
+import InstructorClasses from "./pages/instructor/InstructorClasses";
+import InstructorClassDetail from "./pages/instructor/InstructorClassDetail";
+import InstructorGroupDetail from "./pages/instructor/InstructorGroupDetail";
 
 export default function App() {
   return (
@@ -40,14 +42,17 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Instructor area */}
+            {/* Instructor */}
             <Route element={<ProtectedRoute allow={[ROLES.INSTRUCTOR]} />}>
               <Route element={<ManagerLayout />}>
-                <Route path="/instructor" element={<InstructorDashboard />} />
+                <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
+                <Route path="/instructor/classes" element={<InstructorClasses />} />
+                <Route path="/instructor/classes/:id" element={<InstructorClassDetail />} />
+                <Route path="/instructor/classes/:classId/groups/:groupId" element={<InstructorGroupDetail />} />
               </Route>
             </Route>
 
-            {/* Student area */}
+            {/* Student */}
             <Route element={<ProtectedRoute allow={[ROLES.STUDENT]} />}>
               <Route element={<ManagerLayout />}>
                 <Route
@@ -65,7 +70,7 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Admin area */}
+            {/* Admin */}
             <Route element={<ProtectedRoute allow={[ROLES.ADMIN]} />}>
               <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -82,7 +87,7 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* General Routes */}
+            {/* General */}
             <Route
               element={
                 <ProtectedRoute

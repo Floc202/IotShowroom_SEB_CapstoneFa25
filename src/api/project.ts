@@ -9,11 +9,18 @@ import type {
 
 const BASE = "/Project";
 
-type OuterStatusWrapper<T> = { status: string; data: T };
+type OuterStatusWrapper<T> = { statusCode: string; data: T };
 
 export const getProjectByGroup = async (groupId: Id) => {
   const res = await api.get<OuterStatusWrapper<ProjectDetail>>(
     `${BASE}/group/${groupId}`
+  );
+  return res.data.data; 
+};
+
+export const getProjectByClass = async (classId: Id) => {
+  const res = await api.get<OuterStatusWrapper<ProjectDetail>>(
+    `${BASE}/class/${classId}`
   );
   return res.data.data; 
 };
@@ -23,15 +30,15 @@ export const createProject = (payload: CreateProjectRequest) =>
 
 export const updateProject = (payload: UpdateProjectRequest) =>
   api
-    .put<ApiEnvelope<ProjectDetail>>(`${BASE}/${payload.projectId}`, payload)
+    .put(`${BASE}/${payload.projectId}`, payload)
     .then((r) => r.data);
 
 export const deleteProject = (projectId: Id) =>
-  api.delete<ApiEnvelope<boolean>>(`${BASE}/${projectId}`).then((r) => r.data);
+  api.delete(`${BASE}/${projectId}`).then((r) => r.data);
 
 export const updateProjectStatus = (payload: UpdateProjectStatusRequest) =>
   api
-    .put<ApiEnvelope<ProjectDetail>>(
+    .put(
       `${BASE}/${payload.projectId}/status`,
       payload
     )
