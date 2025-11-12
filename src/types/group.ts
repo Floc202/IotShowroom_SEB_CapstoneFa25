@@ -38,6 +38,9 @@ export interface UpdateGroupRequest {
 export interface GroupMember {
   gmId: Id;
   userId: Id;
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
   roleInGroup: string;
   joinedAt: string; 
 }
@@ -57,11 +60,14 @@ export interface GroupDetail {
 export interface GroupBasic {
   groupId: Id;
   classId: Id;
+  className?: string | null;
   groupName: string;
   description?: string | null;
   leaderId?: Id | null;
+  leaderName?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   memberCount?: number;
+  members?: GroupMember[];
   projectCount?: number;
 }
