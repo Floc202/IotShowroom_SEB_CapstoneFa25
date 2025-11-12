@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Button, Form, Input, Select, Space } from "antd";
 import { RefreshCcw, Search, Plus } from "lucide-react";
 import type { Semester } from "../../types/semesters";

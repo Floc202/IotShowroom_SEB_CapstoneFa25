@@ -1,5 +1,4 @@
-import React from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Dropdown, Avatar } from "antd";
 import { useAuth } from "../providers/AuthProvider";
 import { Github, Mail } from "lucide-react";

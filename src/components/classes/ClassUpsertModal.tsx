@@ -1,5 +1,4 @@
-// src/components/classes/ClassUpsertModal.tsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Modal, Form, Input, Select } from "antd";
 import type { Semester } from "../../types/semesters";
 import type { ClassItem, CreateClassRequest, UpdateClassRequest } from "../../types/classes";

@@ -1,53 +1,69 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Card, Tag, Descriptions, Button, Empty, Tooltip, Space } from "antd";
 import { ArrowLeft, FolderOpen, Users, Plus, RefreshCcw } from "lucide-react";
 import dayjs from "dayjs";
 import toast from "react-hot-toast";
 import type { StudentClassItem } from "../../types/student";
-import { createGroup, getGroupById } from "../../api/group";
+import { createGroup, getGroupsByClass } from "../../api/group";
+import { getStudentClasses } from "../../api/student";
 import { getErrorMessage } from "../../utils/helpers";
 import CreateGroupModal from "../../components/group/CreateGroupModal";
-import GroupOverview from "../../components/group/GroupOverview";
-import GroupActions from "../../components/group/GroupActions";
+import GroupAndProjectOverview from "../../components/group/GroupAndProjectOverview";
+import GroupInvitations from "../../components/group/GroupInvitations";
+import { useAuth } from "../../providers/AuthProvider";
 
 export default function StudentClassDetail() {
-  const { state } = useLocation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const initial: StudentClassItem | undefined = state as
-    | StudentClassItem
-    | undefined;
+  const { user } = useAuth();
 
-  const [cls, setCls] = useState<StudentClassItem | undefined>(initial);
-  const [groupLoading, setGroupLoading] = useState(false);
+  const [cls, setCls] = useState<StudentClassItem | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
   const [openCreate, setOpenCreate] = useState(false);
 
-  useEffect(() => {
-    if (!cls?.myGroup?.groupId) return;
-    const groupId = cls.myGroup.groupId;
-    (async () => {
-      try {
-        setGroupLoading(true);
-        const detail = await getGroupById(groupId);
-        setCls((prev) =>
-          prev
-            ? {
-                ...prev,
-                myGroup: {
-                  groupId: detail.groupId,
-                  groupName: detail.groupName,
-                },
-              }
-            : prev
-        );
-      } catch (e) {
-        toast.error(getErrorMessage(e));
-      } finally {
-        setGroupLoading(false);
+  const fetchClassData = async () => {
+    if (!id) return;
+
+    try {
+      setLoading(true);
+      const classId = parseInt(id);
+
+      const [classesRes, groupsRes] = await Promise.all([
+        getStudentClasses(),
+        getGroupsByClass(classId),
+      ]);
+
+      const classData = classesRes.data?.find((c) => c.classId === classId);
+
+      if (!classData) {
+        setCls(undefined);
+        return;
       }
-    })();
-  }, [cls?.myGroup?.groupId]);
+
+      const userGroup = groupsRes.data?.find((g) =>
+        g.members?.some((m) => m.userId === user?.userId)
+      );
+
+      setCls({
+        ...classData,
+        myGroup: userGroup
+          ? {
+              groupId: userGroup.groupId,
+              groupName: userGroup.groupName,
+            }
+          : null,
+      });
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchClassData();
+  }, [id, user?.userId]);
 
   if (!cls) {
     return (
@@ -73,20 +89,15 @@ export default function StudentClassDetail() {
 
   const onCreate = async (groupName: string, description?: string) => {
     try {
-      const res = await createGroup({
-        classId: cls.classId,
+      await createGroup({
+        classId: cls!.classId,
         groupName: groupName.trim(),
         description: description?.trim() || undefined,
       });
 
-      const g = res.data;
-      setCls((prev) =>
-        prev
-          ? { ...prev, myGroup: { groupId: g.groupId, groupName: g.groupName } }
-          : prev
-      );
       toast.success("Group created");
       setOpenCreate(false);
+      fetchClassData();
     } catch (e) {
       toast.error(getErrorMessage(e));
     }
@@ -103,18 +114,17 @@ export default function StudentClassDetail() {
         >
           Back
         </Button>
-        {cls.myGroup && (
-          <Button
-            icon={<RefreshCcw className="w-4 h-4" />}
-            onClick={() => setCls({ ...cls })}
-            loading={groupLoading}
-          >
-            Refresh
-          </Button>
-        )}
+        <Button
+          icon={<RefreshCcw className="w-4 h-4" />}
+          onClick={fetchClassData}
+          loading={loading}
+        >
+          Refresh
+        </Button>
       </Space>
 
       <Card
+        loading={loading}
         className="shadow-sm border-t-4 border-t-blue-500 mb-important"
         title={
           <div className="flex items-center gap-3 py-1">
@@ -165,15 +175,14 @@ export default function StudentClassDetail() {
         </Descriptions>
       </Card>
 
+      {!cls.myGroup && <GroupInvitations onChanged={fetchClassData} />}
+
       {cls.myGroup && (
-        <>
-          <GroupOverview groupId={cls.myGroup.groupId} />
-          <GroupActions
-            classId={cls.classId}
-            groupId={cls.myGroup.groupId}
-            onChanged={() => setCls({ ...cls })}
-          />
-        </>
+        <GroupAndProjectOverview
+          classId={cls.classId}
+          groupId={cls.myGroup.groupId}
+          onChanged={fetchClassData}
+        />
       )}
 
       <CreateGroupModal

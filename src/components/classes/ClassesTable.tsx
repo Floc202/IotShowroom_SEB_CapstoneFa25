@@ -1,5 +1,4 @@
-import React from "react";
-import { Table, Tag, Tooltip, Button, Popconfirm, Popover, Space } from "antd";
+import { Table, Tag, Tooltip, Button, Popconfirm, Popover } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { Eye, Pencil, Trash2, MoreHorizontal } from "lucide-react";

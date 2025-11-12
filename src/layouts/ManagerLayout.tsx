@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Layout, Avatar, Dropdown } from "antd";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
 import {
   Home,
@@ -11,10 +11,6 @@ import {
   MessageSquare,
   BarChart3,
   Settings,
-  ClipboardCheck,
-  Target,
-  FileCheck,
-  FolderOpen,
   Bell,
   User as UserIcon,
   LogOut,
@@ -67,14 +63,14 @@ export default function ManagerLayout() {
       return [
         { id: "/instructor/dashboard", icon: Home, label: "Dashboard" },
         { id: "/instructor/classes", icon: BookOpen, label: "Classes" },
-        { id: "/instructor/groups", icon: Users, label: "Groups" },
-        {
-          id: "/instructor/proposals",
-          icon: ClipboardCheck,
-          label: "Proposals",
-        },
-        { id: "/instructor/milestones", icon: Target, label: "Milestones" },
-        { id: "/instructor/grading", icon: FileCheck, label: "Grading" },
+        // { id: "/instructor/groups", icon: Users, label: "Groups" },
+        // {
+        //   id: "/instructor/proposals",
+        //   icon: ClipboardCheck,
+        //   label: "Proposals",
+        // },
+        // { id: "/instructor/milestones", icon: Target, label: "Milestones" },
+        // { id: "/instructor/grading", icon: FileCheck, label: "Grading" },
         {
           id: "/instructor/announcements",
           icon: MessageSquare,
@@ -86,7 +82,7 @@ export default function ManagerLayout() {
       return [
         { id: "/student/dashboard", icon: Home, label: "Dashboard" },
         { id: "/student/classes", icon: BookOpen, label: "My Classes" },
-        { id: "/student/projects", icon: FolderOpen, label: "My Projects" },
+        // { id: "/student/projects", icon: FolderOpen, label: "My Projects" },
         { id: "/notifications", icon: Bell, label: "Notifications" },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
