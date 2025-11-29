@@ -24,7 +24,6 @@ import type {
   ClassStudentsResult,
 } from "../types/admin";
 
-/** ===== Dashboard ===== */
 export const getAdminOverview = () =>
   api
     .get<ApiEnvelope<AdminOverview>>("Admin/dashboard/overview")
@@ -35,7 +34,6 @@ export const getAdminStatistics = () =>
     .get<ApiEnvelope<AdminStatistics>>("Admin/dashboard/statistics")
     .then((r) => r.data);
 
-/** ===== Charts ===== */
 export const getClassesBySemesterChart = () =>
   api
     .get<
@@ -65,7 +63,6 @@ export const getMilestoneCompletionChart = () =>
     >("Admin/dashboard/charts/milestone-completion")
     .then((r) => r.data);
 
-/** ===== Hall of Fame ===== */
 export const getHallOfFame = () =>
   api
     .get<ApiEnvelope<HallOfFameItem[]>>("Admin/hall-of-fame")
@@ -91,7 +88,6 @@ export const getHallOfFameBySemester = (semesterId: number) =>
     .get<ApiEnvelope<HallOfFameItem[]>>(`Admin/hall-of-fame/${semesterId}`)
     .then((r) => r.data);
 
-/** ===== Leaderboard ===== */
 export const getLeaderboardTop10 = (semesterId: number) =>
   api
     .get<ApiEnvelope<LeaderboardTop10>>(
@@ -99,7 +95,6 @@ export const getLeaderboardTop10 = (semesterId: number) =>
     )
     .then((r) => r.data);
 
-/** ===== Reports ===== */
 export const getClassesSummaryReport = (q?: ReportsQuery) =>
   api
     .get<ApiEnvelope<ClassesSummaryReport>>("Admin/reports/classes-summary", {
@@ -146,13 +141,11 @@ export const getGradesDistributionReport = (q?: ReportsQuery) =>
     )
     .then((r) => r.data);
 
-/** ===== Reports Export ===== */
 export const exportReports = (payload: ExportReportDto) =>
   api
     .post<ApiEnvelope<ExportReportResult>>("Admin/reports/export", payload)
     .then((r) => r.data);
 
-/** ===== Classes - Bulk Add & Student Management ===== */
 export const bulkAddStudents = (payload: BulkAddStudentsDto) =>
   api
     .post<ApiEnvelope<BulkAddStudentsResult>>(

@@ -103,7 +103,6 @@ const AdminDashboard = ({}) => {
         </p>
       </div>
 
-      {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {overviewStats.map((stat, index) => {
           const Icon = stat.icon;
@@ -137,7 +136,6 @@ const AdminDashboard = ({}) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* User Distribution */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -166,7 +164,6 @@ const AdminDashboard = ({}) => {
           </div>
         </div>
 
-        {/* Recent Users */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -208,7 +205,6 @@ const AdminDashboard = ({}) => {
           </div>
         </div>
 
-        {/* System Alerts */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
@@ -242,7 +238,6 @@ const AdminDashboard = ({}) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
