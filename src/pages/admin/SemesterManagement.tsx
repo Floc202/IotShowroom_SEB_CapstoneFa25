@@ -109,7 +109,6 @@ export default function SemesterManagement() {
   useEffect(() => {
     fetchAll();
     setPagination((p) => ({ ...p, current: 1 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearFilter]);
 
   const openCreate = () => {
@@ -165,9 +164,21 @@ export default function SemesterManagement() {
         const res = await updateSemester(editing.semesterId, payload);
         if (!res.isSuccess) return toast.error(res.message || "Update failed");
         const updated = res.data;
-        setData((prev) =>
-          prev.map((s) => (s.semesterId === updated.semesterId ? updated : s))
-        );
+        
+        // Nếu semester này được set active, thì set tất cả các semester khác thành inactive
+        if (values.isActive) {
+          setData((prev) =>
+            prev.map((s) => 
+              s.semesterId === updated.semesterId 
+                ? updated 
+                : { ...s, isActive: false }
+            )
+          );
+        } else {
+          setData((prev) =>
+            prev.map((s) => (s.semesterId === updated.semesterId ? updated : s))
+          );
+        }
         toast.success("Updated");
       } else {
         const payload = {
@@ -181,7 +192,13 @@ export default function SemesterManagement() {
         };
         const res = await createSemester(payload);
         if (!res.isSuccess) return toast.error(res.message || "Create failed");
-        setData((prev) => [res.data, ...prev]);
+        
+        // Nếu semester mới được tạo với active, set tất cả các semester khác thành inactive
+        if (values.isActive) {
+          setData((prev) => [res.data, ...prev.map(s => ({ ...s, isActive: false }))]);
+        } else {
+          setData((prev) => [res.data, ...prev]);
+        }
         toast.success("Created");
       }
 

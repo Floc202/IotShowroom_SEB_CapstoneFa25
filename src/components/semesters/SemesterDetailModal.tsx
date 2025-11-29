@@ -293,7 +293,6 @@ export default function SemesterDetailModal({
         </div>
       </Modal>
 
-      {/* Create class modal */}
       <Modal
         open={createOpen}
         onCancel={() => setCreateOpen(false)}

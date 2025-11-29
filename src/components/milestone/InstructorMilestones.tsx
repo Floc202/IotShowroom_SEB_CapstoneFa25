@@ -13,6 +13,7 @@ import {
   Dropdown,
   type MenuProps,
 } from "antd";
+import { useAuth } from "../../providers/AuthProvider";
 import type { ColumnsType } from "antd/es/table";
 import { Plus, Pencil, Trash2, Calendar, MoreHorizontal, Eye, Award } from "lucide-react";
 import dayjs from "dayjs";
@@ -28,6 +29,7 @@ import {
 } from "../../api/instructorMilestone";
 import { gradeMilestone } from "../../api/instructor";
 import type { GradeMilestoneRequest } from "../../types/instructor";
+import SubmissionHistoryView from "../submission/SubmissionHistoryView";
 
 interface InstructorMilestonesProps {
   projectId: Id;
@@ -36,14 +38,19 @@ interface InstructorMilestonesProps {
 export default function InstructorMilestones({
   projectId,
 }: InstructorMilestonesProps) {
+  const { user } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [gradeModalOpen, setGradeModalOpen] = useState(false);
+  const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(
     null
   );
   const [gradingMilestone, setGradingMilestone] = useState<Milestone | null>(
+    null
+  );
+  const [viewingMilestone, setViewingMilestone] = useState<Milestone | null>(
     null
   );
   const [actionLoading, setActionLoading] = useState(false);
@@ -182,8 +189,9 @@ export default function InstructorMilestones({
     }
   };
 
-  const handleViewSubmission = () => {
-    toast.error("View submission feature - API not yet available");
+  const handleViewSubmission = (milestone: Milestone) => {
+    setViewingMilestone(milestone);
+    setSubmissionModalOpen(true);
   };
 
   const handleOpenGradeModal = (milestone: Milestone) => {
@@ -201,7 +209,7 @@ export default function InstructorMilestones({
       const payload: GradeMilestoneRequest = {
         projectId,
         milestoneDefId: gradingMilestone.milestoneId,
-        instructorId: 0, 
+        instructorId: user?.userId || 0,
         score: values.score,
         feedback: values.feedback,
         weightRatioSnapshot: gradingMilestone.weight || 0,
@@ -310,7 +318,7 @@ export default function InstructorMilestones({
             key: "view",
             label: "View Submissions",
             icon: <Eye className="w-4 h-4" />,
-            onClick: () => handleViewSubmission(),
+            onClick: () => handleViewSubmission(record),
           },
           {
             key: "grade",
@@ -472,7 +480,6 @@ export default function InstructorMilestones({
         </Form>
       </Modal>
 
-      {/* Grade Milestone Modal */}
       <Modal
         title={`Grade Milestone - ${gradingMilestone?.title || ''}`}
         open={gradeModalOpen}
@@ -535,6 +542,27 @@ export default function InstructorMilestones({
             </div>
           )}
         </Form>
+      </Modal>
+
+      <Modal
+        title="Milestone Submissions"
+        open={submissionModalOpen}
+        onCancel={() => {
+          setSubmissionModalOpen(false);
+          setViewingMilestone(null);
+        }}
+        footer={null}
+        width={900}
+        style={{top: 20}}
+      >
+        {viewingMilestone && (
+          <SubmissionHistoryView
+            projectId={projectId}
+            milestoneId={viewingMilestone.milestoneId}
+            milestoneTitle={viewingMilestone.title}
+            role="instructor"
+          />
+        )}
       </Modal>
     </>
   );
