@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -10,11 +10,12 @@ import {
   Modal,
   Form,
   Input,
-  InputNumber,
   Select,
   Popconfirm,
   Avatar,
   Divider,
+  Spin,
+  AutoComplete,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
@@ -27,6 +28,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Search,
+  History,
 } from "lucide-react";
 import {
   getClassGroups,
@@ -34,6 +37,7 @@ import {
   addMemberToGroup,
   removeMemberFromGroup,
   updateMemberRole,
+  getUnassignedStudents,
 } from "../../api/instructor";
 import { getProjectByGroup } from "../../api/project";
 import { updateProjectStatus } from "../../api/project";
@@ -41,13 +45,16 @@ import type {
   InstructorGroupDetail,
   InstructorGroupMember,
   UpdateGroupRequest,
-  AddMemberRequest,
+  UnassignedStudent,
 } from "../../types/instructor";
 import type {
   ProjectDetail,
   UpdateProjectStatusRequest,
 } from "../../types/project";
 import InstructorMilestones from "../../components/milestone/InstructorMilestones";
+import ProjectGradesCard from "../../components/project/ProjectGradesCard";
+import FinalSubmissionView from "../../components/finalSubmission/FinalSubmissionView";
+import { ProjectStatusHistoryModal } from "../../components/project/ProjectStatusHistory";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
 import { useAuth } from "../../providers/AuthProvider";
@@ -58,15 +65,23 @@ export default function InstructorGroupDetail() {
   const { user } = useAuth();
 
   const [group, setGroup] = useState<InstructorGroupDetail | null>(null);
-  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>("");
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [students, setStudents] = useState<UnassignedStudent[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<UnassignedStudent[]>([]);
+  const debounceTimer = useRef<number | null>(null);
 
   const [editForm] = Form.useForm<UpdateGroupRequest>();
-  const [addMemberForm] = Form.useForm<AddMemberRequest>();
   const [statusForm] = Form.useForm<{ status: string; comment: string }>();
 
   useEffect(() => {
@@ -83,7 +98,7 @@ export default function InstructorGroupDetail() {
           if (foundGroup) {
             setGroup(foundGroup);
             const projectRes = await getProjectByGroup(gId);
-            setProject(projectRes || null);
+            setProjects(projectRes || []);
           }
         } catch (e) {
           toast.error(getErrorMessage(e));
@@ -93,6 +108,60 @@ export default function InstructorGroupDetail() {
       })();
     }
   }, [classId, groupId]);
+
+  useEffect(() => {
+    if (!addMemberModalOpen) {
+      setStudents([]);
+      setSearchQuery("");
+      setSelectedStudents([]);
+    }
+  }, [addMemberModalOpen]);
+
+  const searchStudents = async (query: string) => {
+    if (!classId || !query.trim()) {
+      setStudents([]);
+      return;
+    }
+    
+    try {
+      setSearching(true);
+      const res = await getUnassignedStudents(parseInt(classId), query);
+      const results = res.data?.students || [];
+      const filtered = results.filter(
+        s => !selectedStudents.some(sel => sel.userId === s.userId)
+      );
+      setStudents(filtered);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    
+    debounceTimer.current = setTimeout(() => {
+      searchStudents(value);
+    }, 300);
+  };
+
+  const handleSelect = (_value: string, option: any) => {
+    const student = students.find(s => s.userId === option.key);
+    if (student && !selectedStudents.some(s => s.userId === student.userId)) {
+      setSelectedStudents([...selectedStudents, student]);
+      setSearchQuery("");
+      setStudents([]);
+    }
+  };
+
+  const handleRemoveStudent = (userId: number) => {
+    setSelectedStudents(selectedStudents.filter(s => s.userId !== userId));
+  };
 
   const handleUpdateGroup = async () => {
     if (!groupId || !group) return;
@@ -120,18 +189,43 @@ export default function InstructorGroupDetail() {
 
   const handleAddMember = async () => {
     if (!groupId || !group || !classId) return;
+    if (selectedStudents.length === 0) {
+      toast.error("Please select at least one student");
+      return;
+    }
+    
     try {
-      const values = await addMemberForm.validateFields();
-      const res = await addMemberToGroup(parseInt(groupId), values);
-
-      if (!res.isSuccess) {
-        toast.error(res.message || "Add member failed");
-        return;
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const student of selectedStudents) {
+        try {
+          const res = await addMemberToGroup(parseInt(groupId), {
+            userId: student.userId,
+            roleInGroup: "Member",
+          });
+          
+          if (res.isSuccess) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (e) {
+          console.error(`Failed to add user ${student.userId}:`, e);
+          failCount++;
+        }
       }
-
-      toast.success("Member added successfully");
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} member${successCount > 1 ? 's' : ''} added successfully`);
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount} member${failCount > 1 ? 's' : ''} failed to add`);
+      }
+      
       setAddMemberModalOpen(false);
-      addMemberForm.resetFields();
+      setSelectedStudents([]);
+      setSearchQuery("");
       
       const cId = parseInt(classId);
       const gId = parseInt(groupId);
@@ -194,11 +288,11 @@ export default function InstructorGroupDetail() {
   };
 
   const handleUpdateProjectStatus = async () => {
-    if (!project || !user?.userId) return;
+    if (!selectedProjectId || !user?.userId) return;
     try {
       const values = await statusForm.validateFields();
       const payload: UpdateProjectStatusRequest = {
-        projectId: project.projectId,
+        projectId: selectedProjectId,
         instructorId: user.userId,
         status: values.status,
         comment: values.comment,
@@ -210,10 +304,12 @@ export default function InstructorGroupDetail() {
       setStatusModalOpen(false);
       statusForm.resetFields();
       
-      setProject({
-        ...project,
-        status: values.status,
-      });
+      setProjects(projects.map(p => 
+        p.projectId === selectedProjectId
+          ? { ...p, status: values.status }
+          : p
+      ));
+      setSelectedProjectId(null);
     } catch (e) {
       toast.error(getErrorMessage(e));
     }
@@ -225,7 +321,7 @@ export default function InstructorGroupDetail() {
       key: "member",
       render: (_: any, record: InstructorGroupMember) => (
         <div className="flex items-center gap-3">
-          <Avatar size={40}>{record.fullName?.[0]}</Avatar>
+          <Avatar size={40} src={record.avatarUrl}>{record.fullName?.[0]}</Avatar>
           <div>
             <div className="font-medium">{record.fullName}</div>
             <div className="text-xs text-gray-500">{record.email}</div>
@@ -380,67 +476,109 @@ export default function InstructorGroupDetail() {
         title={
           <div className="flex items-center gap-2">
             <FolderOpen className="w-5 h-5 text-green-600" />
-            <span>Project Details</span>
+            <span>Projects ({projects.length})</span>
           </div>
         }
-        extra={
-          project && (
-            <Button
-              type="primary"
-              icon={getStatusIcon(project.status)}
-              onClick={() => {
-                statusForm.setFieldsValue({
-                  status: project.status,
-                  comment: "",
-                });
-                setStatusModalOpen(true);
-              }}
-            >
-              Update Status
-            </Button>
-          )
-        }
       >
-        {project ? (
-          <>
-            <Descriptions bordered column={{ xs: 1, sm: 2 }}>
-              <Descriptions.Item label="Title" span={2}>
-                <span className="font-medium text-base">{project.title}</span>
-              </Descriptions.Item>
-              <Descriptions.Item label="Description" span={2}>
-                {project.description || "—"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag
-                  color={getStatusColor(project.status)}
-                  icon={getStatusIcon(project.status)}
-                >
-                  {project.status.toUpperCase()}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Leader">
-                {project.leaderName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Created">
-                {new Date(project.createdAt).toLocaleDateString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Updated">
-                {project.updatedAt
-                  ? new Date(project.updatedAt).toLocaleDateString()
-                  : "—"}
-              </Descriptions.Item>
-            </Descriptions>
+        {projects.length > 0 ? (
+          <div className="space-y-6">
+            {projects.map((project) => (
+              <Card
+                key={project.projectId}
+                type="inner"
+                title={
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-base">{project.title}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="small"
+                        icon={<History className="w-4 h-4" />}
+                        onClick={() => {
+                          setSelectedProjectId(project.projectId);
+                          setSelectedProjectTitle(project.title);
+                          setHistoryModalOpen(true);
+                        }}
+                      >
+                        History
+                      </Button>
+                      <Button
+                        type="primary"
+                        size="small"
+                        icon={getStatusIcon(project.status)}
+                        onClick={() => {
+                          setSelectedProjectId(project.projectId);
+                          statusForm.setFieldsValue({
+                            status: project.status,
+                            comment: "",
+                          });
+                          setStatusModalOpen(true);
+                        }}
+                      >
+                        Update Status
+                      </Button>
+                    </div>
+                  </div>
+                }
+              >
+                <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small">
+                  <Descriptions.Item label="Description" span={2}>
+                    {project.description || "—"}
+                  </Descriptions.Item>
+                  {project.purpose && (
+                    <Descriptions.Item label="Purpose" span={2}>
+                      {project.purpose}
+                    </Descriptions.Item>
+                  )}
+                  {project.expectedTechnology && (
+                    <Descriptions.Item label="Expected Technology" span={2}>
+                      {project.expectedTechnology}
+                    </Descriptions.Item>
+                  )}
+                  <Descriptions.Item label="Status">
+                    <Tag
+                      color={getStatusColor(project.status)}
+                      icon={getStatusIcon(project.status)}
+                    >
+                      {project.status.toUpperCase()}
+                    </Tag>
+                  </Descriptions.Item>
+                 
+                  <Descriptions.Item label="Created">
+                    {new Date(project.createdAt).toLocaleDateString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Updated">
+                    {project.updatedAt
+                      ? new Date(project.updatedAt).toLocaleDateString()
+                      : "—"}
+                  </Descriptions.Item>
+                </Descriptions>
 
-            <Divider />
+                <Divider orientation="left" className="mt-6 mb-4">
+                  <span className="text-sm font-medium text-gray-600">
+                    Milestones Management
+                  </span>
+                </Divider>
 
-            <Divider orientation="left" className="mt-6 mb-4">
-              <span className="text-sm font-medium text-gray-600">
-                Milestones Management
-              </span>
-            </Divider>
+                <InstructorMilestones projectId={project.projectId} />
+                
+                <Divider orientation="left" className="mt-6 mb-4">
+                  <span className="text-sm font-medium text-gray-600">
+                    Grading Overview
+                  </span>
+                </Divider>
 
-            <InstructorMilestones projectId={project.projectId} />
-          </>
+                <ProjectGradesCard projectId={project.projectId} role="instructor" />
+
+                <Divider orientation="left" className="mt-6 mb-4">
+                  <span className="text-sm font-medium text-gray-600">
+                    Final Submission
+                  </span>
+                </Divider>
+
+                <FinalSubmissionView projectId={project.projectId} role="instructor" />
+              </Card>
+            ))}
+          </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
             <FolderOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
@@ -471,31 +609,92 @@ export default function InstructorGroupDetail() {
 
       <Modal
         open={addMemberModalOpen}
-        title="Add Member to Group"
-        onCancel={() => setAddMemberModalOpen(false)}
+        title={
+          <div className="flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-blue-600" />
+            <span>Add Members to Group</span>
+          </div>
+        }
+        onCancel={() => {
+          setAddMemberModalOpen(false);
+          setSelectedStudents([]);
+          setSearchQuery("");
+        }}
         onOk={handleAddMember}
+        width={600}
+        okText="Add Members"
       >
-        <Form form={addMemberForm} layout="vertical">
-          <Form.Item
-            name="userId"
-            label="User ID"
-            rules={[{ required: true, message: "Required" }]}
-          >
-            <InputNumber className="w-full" min={1} />
-          </Form.Item>
-          <Form.Item
-            name="roleInGroup"
-            label="Role"
-            rules={[{ required: true, message: "Required" }]}
-          >
-            <Select
-              options={[
-                { label: "Leader", value: "Leader" },
-                { label: "Member", value: "Member" },
-              ]}
-            />
-          </Form.Item>
-        </Form>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Search and add students
+            </label>
+            <AutoComplete
+              value={searchQuery}
+              onChange={handleSearch}
+              onSelect={handleSelect}
+              options={students.map((student) => ({
+                key: student.userId,
+                value: student.email,
+                label: (
+                  <div className="flex items-center gap-3 py-2">
+                    <Avatar size={32} src={student.avatarUrl}>
+                      {student.fullName[0]}
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="font-medium">{student.fullName}</div>
+                      <div className="text-xs text-gray-500">
+                        {student.email}
+                      </div>
+                    </div>
+                  </div>
+                ),
+              }))}
+              notFoundContent={
+                searching ? (
+                  <div className="text-center py-4">
+                    <Spin size="small" />
+                    <div className="text-xs text-gray-500 mt-2">Searching...</div>
+                  </div>
+                ) : searchQuery.trim() ? (
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    No students found
+                  </div>
+                ) : null
+              }
+              className="w-full"
+            >
+              <Input
+                prefix={<Search className="w-4 h-4 text-gray-400" />}
+                placeholder="Type name or email to search..."
+                size="large"
+              />
+            </AutoComplete>
+          </div>
+
+          {selectedStudents.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Selected students ({selectedStudents.length})
+              </label>
+              <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                {selectedStudents.map((student) => (
+                  <Tag
+                    key={student.userId}
+                    closable
+                    onClose={() => handleRemoveStudent(student.userId)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm"
+                  >
+                    <Avatar size={20} src={student.avatarUrl}>
+                      {student.fullName[0]}
+                    </Avatar>
+                    <span>{student.fullName}</span>
+                  </Tag>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </Modal>
 
       <Modal
@@ -531,6 +730,19 @@ export default function InstructorGroupDetail() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {selectedProjectId && (
+        <ProjectStatusHistoryModal
+          projectId={selectedProjectId}
+          projectTitle={selectedProjectTitle}
+          open={historyModalOpen}
+          onClose={() => {
+            setHistoryModalOpen(false);
+            setSelectedProjectId(null);
+            setSelectedProjectTitle("");
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -82,4 +82,10 @@ export const submitFinalGrade = (projectId: Id, payload: FinalGradeRequest) =>
     .post<ApiEnvelope<boolean>>(`${BASE}/projects/${projectId}/final-grade`, payload)
     .then((r) => r.data);
 
-   
+export const getUnassignedStudents = (classId: Id, query?: string) =>
+  api
+    .get<ApiEnvelope<import("../types/instructor").UnassignedStudentsResponse>>(
+      `${BASE}/classes/${classId}/unassigned-students`,
+      { params: query ? { q: query } : undefined }
+    )
+    .then((r) => r.data);

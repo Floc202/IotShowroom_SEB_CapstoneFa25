@@ -5,7 +5,6 @@ import {
   Descriptions,
   Button,
   Space,
-  Table,
   Tag,
   Modal,
   Form,
@@ -14,9 +13,11 @@ import {
   DatePicker,
   Empty,
   Tabs,
+  Row,
+  Col,
+  Avatar,
 } from "antd";
-import type { ColumnsType } from "antd/es/table";
-import { ArrowLeft, Settings, Users, Pencil } from "lucide-react";
+import { ArrowLeft, Settings, Users, Pencil, Eye, FolderKanban } from "lucide-react";
 import {
   getInstructorClasses,
   getClassConfig,
@@ -103,48 +104,6 @@ export default function InstructorClassDetail() {
       toast.error(getErrorMessage(e));
     }
   };
-
-  const groupColumns: ColumnsType<InstructorGroupDetail> = [
-    {
-      title: "Group Name",
-      dataIndex: "groupName",
-      key: "groupName",
-      render: (text: string, record: InstructorGroupDetail) => (
-        <a
-          onClick={() => navigate(`/instructor/classes/${id}/groups/${record.groupId}`)}
-          className="text-blue-600 hover:text-blue-800 cursor-pointer font-medium"
-        >
-          {text}
-        </a>
-      ),
-    },
-    {
-      title: "Leader",
-      dataIndex: "leaderName",
-      key: "leaderName",
-    },
-    {
-      title: "Members",
-      dataIndex: "memberCount",
-      key: "memberCount",
-      width: 100,
-      render: (count: number) => <Tag color="blue">{count}</Tag>,
-    },
-    {
-      title: "Projects",
-      dataIndex: "projectCount",
-      key: "projectCount",
-      width: 100,
-      render: (count: number) => <Tag color="purple">{count}</Tag>,
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 150,
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-  ];
 
   if (!classData && !loading) {
     return (
@@ -289,12 +248,75 @@ export default function InstructorClassDetail() {
             children: (
               <Card loading={loading} title="Class Groups">
                 {groups.length > 0 ? (
-                  <Table<InstructorGroupDetail>
-                    rowKey="groupId"
-                    columns={groupColumns}
-                    dataSource={groups}
-                    pagination={{ pageSize: 10, showSizeChanger: true }}
-                  />
+                  <Row gutter={[16, 16]}>
+                    {groups.map((group) => (
+                      <Col xs={24} sm={12} lg={8} key={group.groupId}>
+                        <Card
+                          hoverable
+                          className="h-full transition-shadow hover:shadow-lg"
+                          onClick={() => navigate(`/instructor/classes/${id}/groups/${group.groupId}`)}
+                          extra={
+                            <Button
+                              type="primary"
+                              size="small"
+                              icon={<Eye className="w-3 h-3" />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/instructor/classes/${id}/groups/${group.groupId}`);
+                              }}
+                            >
+                              View
+                            </Button>
+                          }
+                          title={
+                            <div className="flex items-center gap-2">
+                              <Users className="w-5 h-5 text-green-600" />
+                              <span className="font-semibold truncate">{group.groupName}</span>
+                            </div>
+                          }
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Avatar size={32} className="bg-blue-500">
+                                {group.leaderName[0]}
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs text-gray-500">Leader</div>
+                                <div className="font-medium truncate">{group.leaderName}</div>
+                              </div>
+                            </div>
+
+                            {group.description && (
+                              <div className="text-sm text-gray-600 line-clamp-2">
+                                {group.description}
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                              <div className="text-center">
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <Users className="w-4 h-4 text-blue-500" />
+                                </div>
+                                <div className="text-xs text-gray-500">Members</div>
+                                <div className="font-semibold text-blue-600">{group.memberCount}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <FolderKanban className="w-4 h-4 text-purple-500" />
+                                </div>
+                                <div className="text-xs text-gray-500">Projects</div>
+                                <div className="font-semibold text-purple-600">{group.projectCount}</div>
+                              </div>
+                            </div>
+
+                            <div className="text-xs text-gray-400 pt-2 border-t">
+                              Created: {new Date(group.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
                 ) : (
                   <Empty description="No groups found" />
                 )}

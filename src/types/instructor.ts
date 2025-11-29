@@ -73,6 +73,7 @@ export interface InstructorGroupMember {
   fullName: string;
   email: string;
   roleInGroup: string;
+  avatarUrl?: string | null;
 }
 
 export interface InstructorGroupDetail {
@@ -131,4 +132,19 @@ export interface UpdateClassConfigRequest {
 export interface FinalGradeRequest {
   grade: number;
   feedback: string;
+}
+
+export interface UnassignedStudent {
+  userId: Id;
+  fullName: string;
+  email: string;
+  enrolledAt: string;
+  avatarUrl: string | null;
+}
+
+export interface UnassignedStudentsResponse {
+  classId: Id;
+  className: string;
+  totalUnassignedStudents: number;
+  students: UnassignedStudent[];
 }
