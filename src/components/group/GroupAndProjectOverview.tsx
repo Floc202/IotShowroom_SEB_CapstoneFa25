@@ -25,6 +25,7 @@ interface GroupAndProjectOverviewProps {
 }
 
 export default function GroupAndProjectOverview({
+  classId,
   groupId,
   onChanged,
 }: GroupAndProjectOverviewProps) {
@@ -32,7 +33,7 @@ export default function GroupAndProjectOverview({
   const requesterId = user?.userId as number | undefined;
 
   const [detail, setDetail] = useState<GroupDetail | null>(null);
-  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [projects, setProjects] = useState<ProjectDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -40,14 +41,15 @@ export default function GroupAndProjectOverview({
   const [updateOpen, setUpdateOpen] = useState(false);
   const [projectOpen, setProjectOpen] = useState(false);
   const [projectUpdateOpen, setProjectUpdateOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
 
   const [inviteForm] = Form.useForm<{ invitedUserId: number }>();
   const [updateForm] = Form.useForm<{
     groupName: string;
     description?: string;
   }>();
-  const [projectForm] = Form.useForm<{ title: string; description?: string }>();
-  const [projectUpdateForm] = Form.useForm<{ title: string; description?: string }>();
+  const [projectForm] = Form.useForm<{ title: string; description?: string; purpose: string; expectedTechnology: string }>();
+  const [projectUpdateForm] = Form.useForm<{ title: string; description?: string; purpose: string; expectedTechnology: string }>();
 
   const fetchData = async () => {
     try {
@@ -57,12 +59,15 @@ export default function GroupAndProjectOverview({
         getProjectByGroup(groupId),
       ]);
 
+
+      console.log("Fetched project data:", projectData);
+
       if (groupData.status === "fulfilled") {
         setDetail(groupData.value);
       }
 
       if (projectData.status === "fulfilled") {
-        setProject(projectData.value);
+        setProjects(projectData.value || []);
       }
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -80,19 +85,38 @@ export default function GroupAndProjectOverview({
     return detail.leaderId === user.userId;
   }, [detail, user?.userId]);
 
-  const doInvite = async () => {
+  const doInvite = async (selectedUserIds: number[]) => {
     try {
-      const v = await inviteForm.validateFields();
       if (!requesterId) return toast.error("Missing requester");
+      if (selectedUserIds.length === 0) return toast.error("No students selected");
+      
       setActionLoading(true);
-      await inviteToGroup({
-        groupId,
-        invitedUserId: v.invitedUserId,
-        inviterUserId: requesterId,
-      });
-      toast.success("Invitation sent");
+      
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const userId of selectedUserIds) {
+        try {
+          await inviteToGroup({
+            groupId,
+            invitedUserId: userId,
+            inviterUserId: requesterId,
+          });
+          successCount++;
+        } catch (e) {
+          console.error(`Failed to invite user ${userId}:`, e);
+          failCount++;
+        }
+      }
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} invitation${successCount > 1 ? 's' : ''} sent successfully`);
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount} invitation${failCount > 1 ? 's' : ''} failed`);
+      }
+      
       setInviteOpen(false);
-      inviteForm.resetFields();
       fetchData();
       onChanged?.();
     } catch (e) {
@@ -167,6 +191,8 @@ export default function GroupAndProjectOverview({
         groupId,
         title: v.title.trim(),
         description: v.description?.trim() || "",
+        purpose: v.purpose.trim(),
+        expectedTechnology: v.expectedTechnology.trim(),
       });
 
       toast.success("Project created");
@@ -182,16 +208,18 @@ export default function GroupAndProjectOverview({
   };
 
   const doUpdateProject = async () => {
-    if (!project || !requesterId) return;
+    if (!selectedProjectId || !requesterId) return;
     try {
       const v = await projectUpdateForm.validateFields();
       setActionLoading(true);
       
       const payload: UpdateProjectRequest = {
-        projectId: project.projectId,
+        projectId: selectedProjectId,
         requesterUserId: requesterId,
         title: v.title.trim(),
         description: v.description?.trim() || "",
+        purpose: v.purpose.trim(),
+        expectedTechnology: v.expectedTechnology.trim(),
       };
       
       await updateProject(payload);
@@ -200,11 +228,12 @@ export default function GroupAndProjectOverview({
       setProjectUpdateOpen(false);
       projectUpdateForm.resetFields();
       
-      setProject({
-        ...project,
-        title: payload.title,
-        description: payload.description,
-      });
+      setProjects(projects.map(p => 
+        p.projectId === selectedProjectId
+          ? { ...p, title: payload.title, description: payload.description, purpose: payload.purpose, expectedTechnology: payload.expectedTechnology }
+          : p
+      ));
+      setSelectedProjectId(null);
       
       onChanged?.();
     } catch (e) {
@@ -215,10 +244,17 @@ export default function GroupAndProjectOverview({
   };
 
   const canEditProject = useMemo(() => {
-    if (!project) return false;
-    const status = project.status.toLowerCase();
-    return status === 'approved' || status === 'revision';
-  }, [project]);
+    return true;
+  }, []);
+
+  const canCreateProject = useMemo(() => {
+    if (projects.length === 0) return true;
+    
+    const allRejected = projects.every(
+      p => p.status.toLowerCase() === 'rejected'
+    );
+    return allRejected;
+  }, [projects]);
 
   return (
     <div className="space-y-6">
@@ -242,17 +278,22 @@ export default function GroupAndProjectOverview({
       )}
 
       <ProjectOverviewCard
-        project={project}
+        projects={projects}
         loading={loading}
         isLeader={isLeader}
         canEdit={canEditProject}
+        canCreateProject={canCreateProject}
         showMilestones={true}
         onCreateProject={() => setProjectOpen(true)}
-        onEditProject={() => {
+        onEditProject={(projectId: number) => {
+          const project = projects.find(p => p.projectId === projectId);
           if (project) {
+            setSelectedProjectId(projectId);
             projectUpdateForm.setFieldsValue({
               title: project.title,
               description: project.description || undefined,
+              purpose: project.purpose || undefined,
+              expectedTechnology: project.expectedTechnology || undefined,
             });
             setProjectUpdateOpen(true);
           }
@@ -265,13 +306,13 @@ export default function GroupAndProjectOverview({
         projectOpen={projectOpen}
         projectUpdateOpen={projectUpdateOpen}
         actionLoading={actionLoading}
+        classId={classId}
         inviteForm={inviteForm}
         updateForm={updateForm}
         projectForm={projectForm}
         projectUpdateForm={projectUpdateForm}
         onInviteCancel={() => {
           setInviteOpen(false);
-          inviteForm.resetFields();
         }}
         onInviteOk={doInvite}
         onUpdateCancel={() => {

@@ -12,7 +12,7 @@ const BASE = "/Project";
 type OuterStatusWrapper<T> = { statusCode: string; data: T };
 
 export const getProjectByGroup = async (groupId: Id) => {
-  const res = await api.get<OuterStatusWrapper<ProjectDetail>>(
+  const res = await api.get<OuterStatusWrapper<ProjectDetail[]>>(
     `${BASE}/group/${groupId}`
   );
   return res.data.data; 
@@ -41,5 +41,12 @@ export const updateProjectStatus = (payload: UpdateProjectStatusRequest) =>
     .put(
       `${BASE}/${payload.projectId}/status`,
       payload
+    )
+    .then((r) => r.data);
+
+export const getProjectStatusHistory = async (projectId: Id) =>
+  api
+    .get<ApiEnvelope<import("../types/project").ProjectStatusHistory[]>>(
+      `${BASE}/${projectId}/status-history`
     )
     .then((r) => r.data);

@@ -4,6 +4,8 @@ export interface ProjectDetail {
   projectId: Id;
   title: string;
   description: string | null;
+  purpose?: string | null;
+  expectedTechnology?: string | null;
   status: string;
   leaderId: Id;
   leaderName: string;
@@ -27,6 +29,8 @@ export interface CreateProjectRequest {
   groupId: Id;
   title: string;
   description: string;
+  purpose: string;
+  expectedTechnology: string;
 }
 
 export interface UpdateProjectRequest {
@@ -34,6 +38,8 @@ export interface UpdateProjectRequest {
   requesterUserId: Id;
   title: string;
   description: string;
+  purpose: string;
+  expectedTechnology: string;
 }
 
 export interface UpdateProjectStatusRequest {
@@ -41,4 +47,13 @@ export interface UpdateProjectStatusRequest {
   instructorId: Id;
   status: string;
   comment: string;
+}
+
+export interface ProjectStatusHistory {
+  historyId: Id;
+  status: string;
+  comment: string;
+  reviewerId: Id;
+  reviewerName: string;
+  reviewedAt: string;
 }
