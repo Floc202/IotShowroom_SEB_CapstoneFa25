@@ -1,161 +1,282 @@
-import { BookOpen, FolderOpen, Bell, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Card, Statistic, Row, Col, List, Tag, Empty, Spin, Badge } from "antd";
+import { BookOpen, Users, FolderOpen, TrendingUp, Award, Clock, Bell } from 'lucide-react';
+import { getStudentDashboard } from "../../api/student";
+import type { StudentDashboard as StudentDashboardType } from "../../types/student";
+import toast from "react-hot-toast";
+import { getErrorMessage } from "../../utils/helpers";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 
+dayjs.extend(relativeTime);
 
 const StudentDashboard = () => {
-  const stats = [
-    {
-      title: 'Active Classes',
-      value: '4',
-      icon: BookOpen,
-      color: 'bg-blue-500',
-      trend: '+2 this semester',
-    },
-    {
-      title: 'Projects',
-      value: '7',
-      icon: FolderOpen,
-      color: 'bg-emerald-500',
-      trend: '3 submitted',
-    },
-    {
-      title: 'Notifications',
-      value: '3',
-      icon: Bell,
-      color: 'bg-orange-500',
-      trend: '1 unread',
-    },
-    {
-      title: 'Average Score',
-      value: '87%',
-      icon: TrendingUp,
-      color: 'bg-purple-500',
-      trend: '+5% from last term',
-    },
-  ];
+  const [dashboard, setDashboard] = useState<StudentDashboardType | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const recentProjects = [
-    {
-      id: '1',
-      title: 'Smart Home IoT System',
-      class: 'IoT Fundamentals',
-      status: 'Submitted',
-      score: '92%',
-      dueDate: '2025-01-20',
-    },
-    {
-      id: '2',
-      title: 'Weather Monitoring Station',
-      class: 'Sensor Networks',
-      status: 'In Progress',
-      score: 'Pending',
-      dueDate: '2025-02-15',
-    },
-    {
-      id: '3',
-      title: 'Automated Plant Care',
-      class: 'IoT Applications',
-      status: 'Draft',
-      score: 'Not Graded',
-      dueDate: '2025-02-28',
-    },
-  ];
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
-  const upcomingDeadlines = [
-    { project: 'Weather Monitoring Station', class: 'Sensor Networks', dueDate: '2025-02-15' },
-    { project: 'Automated Plant Care', class: 'IoT Applications', dueDate: '2025-02-28' },
-    { project: 'Smart Traffic System', class: 'Advanced IoT', dueDate: '2025-03-10' },
-  ];
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const res = await getStudentDashboard();
+      if (res.isSuccess && res.data) {
+        setDashboard(res.data);
+      }
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getGradeColor = (grade: number) => {
+    if (grade >= 80) return "green";
+    if (grade >= 50) return "blue";
+    if (grade >= 30) return "orange";
+    return "red";
+  };
+
+  const getDeadlineColor = (daysRemaining: number) => {
+    if (daysRemaining < 0) return "red";
+    if (daysRemaining <= 3) return "orange";
+    if (daysRemaining <= 7) return "blue";
+    return "green";
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="p-8">
+        <Empty description="No dashboard data available" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Student Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome back! Here's your project overview.</p>
+        <p className="text-gray-600 mt-2">Welcome back, {dashboard.studentName}! Here's your overview.</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</h3>
-              <p className="text-gray-600 text-sm mb-2">{stat.title}</p>
-              <p className="text-xs text-gray-500">{stat.trend}</p>
+      <Row gutter={16} className="mb-8">
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+            <Statistic
+              title="Total Classes"
+              value={dashboard.statistics.totalClasses}
+              prefix={<BookOpen className="w-5 h-5" />}
+              valueStyle={{ color: "#1890ff" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+            <Statistic
+              title="Total Groups"
+              value={dashboard.statistics.totalGroups}
+              prefix={<Users className="w-5 h-5" />}
+              valueStyle={{ color: "#722ed1" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100">
+            <Statistic
+              title="Total Projects"
+              value={dashboard.statistics.totalProjects}
+              prefix={<FolderOpen className="w-5 h-5" />}
+              valueStyle={{ color: "#52c41a" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+            <Statistic
+              title="Average Grade"
+              value={dashboard.statistics.averageGrade?.toFixed(1) ?? "N/A"}
+              prefix={<Award className="w-5 h-5" />}
+              suffix={dashboard.statistics.averageGrade !== null ? "%" : ""}
+              valueStyle={{ 
+                color: dashboard.statistics.averageGrade !== null 
+                  ? dashboard.statistics.averageGrade >= 50 ? "#52c41a" : "#fa8c16"
+                  : "#666"
+              }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-cyan-50 to-cyan-100">
+            <Statistic
+              title="Total Submissions"
+              value={dashboard.statistics.totalSubmissions}
+              prefix={<TrendingUp className="w-5 h-5" />}
+              valueStyle={{ color: "#13c2c2" }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="bg-gradient-to-br from-red-50 to-red-100">
+            <Statistic
+              title="Pending Submissions"
+              value={dashboard.statistics.pendingSubmissions}
+              prefix={<Clock className="w-5 h-5" />}
+              valueStyle={{ color: "#f5222d" }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <Card
+          title={
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <span>Upcoming Deadlines</span>
+              <Badge count={dashboard.upcomingDeadlines.length} showZero />
             </div>
-          );
-        })}
+          }
+          className="shadow-sm"
+        >
+          {dashboard.upcomingDeadlines.length > 0 ? (
+            <List
+              dataSource={dashboard.upcomingDeadlines}
+              renderItem={(item) => (
+                <List.Item>
+                  <List.Item.Meta
+                    title={
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{item.milestoneTitle}</span>
+                        <Tag color={getDeadlineColor(item.daysRemaining)}>
+                          {item.daysRemaining < 0 
+                            ? `${Math.abs(item.daysRemaining)} days overdue`
+                            : `${item.daysRemaining} days left`
+                          }
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">
+                          Project: {item.projectTitle}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span>Due: {dayjs(item.deadline).format("MMM DD, YYYY")}</span>
+                          <span>•</span>
+                          <span>Weight: {item.weight}%</span>
+                          <span>•</span>
+                          <Tag color="blue" className="text-xs">{item.status}</Tag>
+                        </div>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          ) : (
+            <Empty description="No upcoming deadlines" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          )}
+        </Card>
+
+        <Card
+          title={
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-green-600" />
+              <span>Recent Grades</span>
+              <Badge count={dashboard.recentGrades.length} showZero />
+            </div>
+          }
+          className="shadow-sm"
+        >
+          {dashboard.recentGrades.length > 0 ? (
+            <List
+              dataSource={dashboard.recentGrades}
+              renderItem={(item) => (
+                <List.Item>
+                  <List.Item.Meta
+                    title={
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{item.milestoneTitle}</span>
+                        <Tag color={getGradeColor(item.grade)} className="text-base font-semibold">
+                          {item.grade}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-600">
+                          Project: {item.projectTitle}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Graded {dayjs(item.gradedAt).fromNow()}
+                        </div>
+                        {item.feedback && (
+                          <div className="text-xs text-gray-600 italic">
+                            Feedback: {item.feedback}
+                          </div>
+                        )}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          ) : (
+            <Empty description="No grades yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          )}
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Projects */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
-              <button
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                View All
-              </button>
-            </div>
+      <Card
+        title={
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-orange-600" />
+            <span>Recent Notifications</span>
+            <Badge count={dashboard.recentNotifications.filter(n => !n.isRead).length} showZero />
           </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {recentProjects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{project.title}</h3>
-                    <p className="text-sm text-gray-600">{project.class}</p>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                        project.status === 'Submitted'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : project.status === 'In Progress'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {project.status}
-                    </span>
-                    <p className="text-sm text-gray-600 mt-1">{project.score}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Upcoming Deadlines */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Upcoming Deadlines</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {upcomingDeadlines.map((deadline, index) => (
-                <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <h3 className="font-medium text-gray-900">{deadline.project}</h3>
-                    <p className="text-sm text-gray-600">{deadline.class}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{deadline.dueDate}</p>
-                    <p className="text-xs text-orange-600">5 days left</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+        }
+        className="shadow-sm"
+      >
+        {dashboard.recentNotifications.length > 0 ? (
+          <List
+            dataSource={dashboard.recentNotifications}
+            renderItem={(item) => (
+              <List.Item className={!item.isRead ? "bg-blue-50" : ""}>
+                <List.Item.Meta
+                  title={
+                    <div className="flex items-center gap-2">
+                      <span className={!item.isRead ? "font-semibold" : ""}>{item.title}</span>
+                      {!item.isRead && <Badge status="processing" text="New" />}
+                    </div>
+                  }
+                  description={
+                    <div className="space-y-1">
+                      <div className="text-sm text-gray-600">{item.message}</div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{dayjs(item.createdAt).fromNow()}</span>
+                        <span>•</span>
+                        <Tag color="blue" className="text-xs">{item.type}</Tag>
+                      </div>
+                    </div>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        ) : (
+          <Empty description="No notifications" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        )}
+      </Card>
     </div>
   );
 };

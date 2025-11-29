@@ -17,31 +17,33 @@ export interface StudentDashboard {
 }
 
 export interface DashboardDeadlineItem {
-  id: Id;
-  classId: Id;
-  className: string;
-  title: string;
-  dueDate: string; 
-  status: "upcoming" | "overdue" | "completed";
+  projectId: Id;
+  projectTitle: string;
+  milestoneId: Id;
+  milestoneTitle: string;
+  deadline: string;
+  daysRemaining: number;
+  status: string;
+  weight: number;
 }
 
 export interface DashboardGradeItem {
-  id: Id;
-  classId: Id;
-  className: string;
-  itemName: string;
-  score: number | null;
-  maxScore: number | null;
-  percentage: number | null; 
-  gradedAt?: string | null; 
+  projectId: Id;
+  projectTitle: string;
+  milestoneId: Id;
+  milestoneTitle: string;
+  grade: number;
+  gradedAt: string;
+  feedback: string;
 }
 
 export interface DashboardNotificationItem {
-  id: Id;
-  type: "general" | "deadline" | "grade" | "group" | "system";
+  notificationId: Id;
+  title: string;
   message: string;
-  createdAt: string; 
-  read: boolean;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface StudentClassItem {
@@ -79,16 +81,19 @@ export interface StudentGroupDetail {
 }
 
 export interface GroupInvitation {
-  invitationId: Id;
+  invitationId?: Id;
   classId: Id;
   className: string;
   groupId: Id;
   groupName: string;
-  inviterId: Id;
-  inviterName: string;
+  inviterId?: Id;
+  inviterName?: string;
+  invitedBy?: string;
+  invitedAt?: string;
   message?: string | null;
-  createdAt: string;
+  createdAt?: string;
   expiresAt?: string | null;
+  notificationId?: Id;
 }
 
 export interface GroupInvitationList {
@@ -99,4 +104,34 @@ export interface GroupInvitationList {
 export interface RejectGroupInvitationRequest {
   groupId: Id;
   reason?: string;
+}
+
+export interface StudentMilestoneGrade {
+  milestoneId: Id;
+  milestoneTitle: string;
+  weight: number;
+  grade: number | null;
+  feedback: string | null;
+  gradedAt: string | null;
+  gradedBy: string | null;
+  status: string;
+}
+
+export interface StudentProjectGrades {
+  projectId: Id;
+  projectTitle: string;
+  classId: Id;
+  className: string;
+  semesterName: string;
+  groupId: Id;
+  groupName: string;
+  projectStatus: string;
+  overallGrade: number | null;
+  milestones: StudentMilestoneGrade[];
+  gradeBreakdown: {
+    milestoneScores: Record<string, number>;
+    totalWeightedScore: number;
+    totalWeight: number;
+    projectedFinalGrade: number;
+  };
 }

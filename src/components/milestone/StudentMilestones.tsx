@@ -8,29 +8,20 @@ import {
   Form,
   Input,
   Upload,
-  Descriptions,
   Dropdown,
   type MenuProps,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-  FileText,
-  Eye,
-  MoreHorizontal,
-  UploadCloud,
-} from "lucide-react";
+import { FileText, Eye, MoreHorizontal, UploadCloud } from "lucide-react";
 import { getMilestones } from "../../api/milestone";
 import {
   submitMilestone,
   getSubmissionHistory,
   uploadSubmissionFile,
-  getSubmissionFiles,
 } from "../../api/submission";
 import type { Milestone } from "../../types/milestone";
 import type {
-  Submission,
   CreateSubmissionRequest,
-  SubmissionFile,
   SubmissionHistory,
 } from "../../types/submission";
 import toast from "react-hot-toast";
@@ -53,17 +44,13 @@ export default function StudentMilestones({
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(
     null
   );
-  const [currentSubmission, setCurrentSubmission] = useState<Submission | null>(
-    null
-  );
-  const [submissionHistory, setSubmissionHistory] = useState<SubmissionHistory | null>(null);
-  const [submissionFiles, setSubmissionFiles] = useState<SubmissionFile[]>([]);
+  const [submissionHistory, setSubmissionHistory] =
+    useState<SubmissionHistory | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
 
-  const [submitForm] = Form.useForm<
-    Omit<CreateSubmissionRequest, "projectId" | "milestoneId">
-  >();
+  const [submitForm] =
+    Form.useForm<Omit<CreateSubmissionRequest, "projectId" | "milestoneId">>();
 
   const fetchMilestones = async () => {
     try {
@@ -105,7 +92,7 @@ export default function StudentMilestones({
 
       if (fileList.length > 0) {
         const submissionId = res.data.submissionId;
-        console.log("submissionId: ", res)
+
         const uploadPromises = fileList.map((fileItem) =>
           uploadSubmissionFile(submissionId, fileItem.originFileObj)
         );
@@ -143,26 +130,15 @@ export default function StudentMilestones({
     try {
       setActionLoading(true);
       setSelectedMilestone(milestone);
-      
-      const historyRes = await getSubmissionHistory(milestone.milestoneId, projectId);
+
+      const historyRes = await getSubmissionHistory(
+        projectId,
+        milestone.milestoneId
+      );
       if (historyRes.isSuccess && historyRes.data) {
         setSubmissionHistory(historyRes.data);
-        
-        if (historyRes.data.latestSubmission) {
-          setCurrentSubmission(historyRes.data.latestSubmission);
-          
-          const filesRes = await getSubmissionFiles(historyRes.data.latestSubmission.submissionId);
-          if (filesRes.isSuccess && filesRes.data) {
-            setSubmissionFiles(filesRes.data);
-          }
-        } else {
-          setCurrentSubmission(null);
-          setSubmissionFiles([]);
-        }
       } else {
         setSubmissionHistory(null);
-        setCurrentSubmission(null);
-        setSubmissionFiles([]);
       }
 
       setViewModalOpen(true);
@@ -300,7 +276,6 @@ export default function StudentMilestones({
         <Empty description="No milestones available yet" />
       )}
 
-      {/* Submit Modal */}
       <Modal
         title="Submit Milestone"
         open={submitModalOpen}
@@ -314,235 +289,198 @@ export default function StudentMilestones({
         cancelText="Cancel"
         confirmLoading={actionLoading}
         width={600}
-    >
-      <Form
-        form={submitForm}
-        layout="vertical"
-        onFinish={handleSubmit}
       >
-        <Form.Item
-          label="Description"
-          name="description"
-          rules={[{ required: true, message: 'Please enter submission description' }]}
-        >
-          <Input.TextArea
-            rows={4}
-            placeholder="Describe what you've accomplished for this milestone..."
-          />
-        </Form.Item>
-        <Form.Item
-          label="Submission Notes"
-          name="submissionNotes"
-        >
-          <Input.TextArea
-            rows={3}
-            placeholder="Any additional notes or comments (optional)..."
-          />
-        </Form.Item>
-        <Form.Item label="Attach Files (Optional)">
-          <Upload.Dragger
-            multiple
-            fileList={fileList}
-            onChange={({ fileList }) => setFileList(fileList)}
-            beforeUpload={() => false}
+        <Form form={submitForm} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="Description"
+            name="description"
+            rules={[
+              {
+                required: true,
+                message: "Please enter submission description",
+              },
+            ]}
           >
-            <p className="ant-upload-drag-icon">
-              <UploadCloud size={48} className="mx-auto text-gray-400" />
-            </p>
-            <p className="ant-upload-text">Click or drag files to upload</p>
-            <p className="ant-upload-hint">
-              You can upload multiple files at once
-            </p>
-          </Upload.Dragger>
-        </Form.Item>
-      </Form>
-    </Modal>
+            <Input.TextArea
+              rows={4}
+              placeholder="Describe what you've accomplished for this milestone..."
+            />
+          </Form.Item>
+          <Form.Item label="Submission Notes" name="submissionNotes">
+            <Input.TextArea
+              rows={3}
+              placeholder="Any additional notes or comments (optional)..."
+            />
+          </Form.Item>
+          <Form.Item label="Attach Files (Optional)">
+            <Upload.Dragger
+              multiple
+              fileList={fileList}
+              onChange={({ fileList }) => setFileList(fileList)}
+              beforeUpload={() => false}
+            >
+              <p className="ant-upload-drag-icon">
+                <UploadCloud size={48} className="mx-auto text-gray-400" />
+              </p>
+              <p className="ant-upload-text">Click or drag files to upload</p>
+              <p className="ant-upload-hint">
+                You can upload multiple files at once
+              </p>
+            </Upload.Dragger>
+          </Form.Item>
+        </Form>
+      </Modal>
 
-    {/* View Submission Modal */}
-    <Modal
-      title={`Submission History - ${selectedMilestone?.title || ''}`}
-      open={viewModalOpen}
-      onCancel={() => {
-        setViewModalOpen(false);
-        setSubmissionHistory(null);
-        setCurrentSubmission(null);
-        setSubmissionFiles([]);
-      }}
-      footer={
-        <Button onClick={() => {
+      <Modal
+        title={`Submission History - ${selectedMilestone?.title || ""}`}
+        open={viewModalOpen}
+        onCancel={() => {
           setViewModalOpen(false);
           setSubmissionHistory(null);
-          setCurrentSubmission(null);
-          setSubmissionFiles([]);
-        }}>
-          Close
-        </Button>
-      }
-      width={900}
-    >
-      {submissionHistory ? (
-        <div className="space-y-6">
-          {/* Summary Info */}
-          <div className="bg-gray-50 p-4 rounded">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-gray-500 text-sm">Total Submissions</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {submissionHistory.totalSubmissions}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Weight</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {submissionHistory.weight}%
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">Deadline</p>
-                <p className="text-lg font-semibold">
-                  {dayjs(submissionHistory.deadline).format('DD/MM/YYYY')}
-                </p>
+        }}
+        style={{ top: 20 }}
+        footer={
+          <Button
+            onClick={() => {
+              setViewModalOpen(false);
+              setSubmissionHistory(null);
+            }}
+          >
+            Close
+          </Button>
+        }
+        width={900}
+      >
+        {submissionHistory ? (
+          <div className="space-y-6">
+            <div className="bg-gray-50 p-4 rounded">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-gray-500 text-sm">Total Submissions</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {submissionHistory.totalSubmissions}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Weight</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {submissionHistory.weight}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500 text-sm">Deadline</p>
+                  <p className="text-lg font-semibold">
+                    {dayjs(submissionHistory.deadline).format("DD/MM/YYYY")}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Latest Submission */}
-          {currentSubmission ? (
-            <div>
-              <h4 className="font-semibold text-lg mb-3">Latest Submission</h4>
-              <Descriptions bordered column={2} size="small">
-                <Descriptions.Item label="Version">
-                  v{currentSubmission.version}
-                </Descriptions.Item>
-                <Descriptions.Item label="Status">
-                  <Tag color={getStatusColor(currentSubmission.status)}>
-                    {currentSubmission.status}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="Submitted At">
-                  {dayjs(currentSubmission.submittedAt).format('DD/MM/YYYY HH:mm')}
-                </Descriptions.Item>
-                <Descriptions.Item label="Submitted By">
-                  {currentSubmission.submittedByName || currentSubmission.submittedBy}
-                </Descriptions.Item>
-                <Descriptions.Item label="Description" span={2}>
-                  {currentSubmission.description || '-'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Submission Notes" span={2}>
-                  {currentSubmission.submissionNotes || '-'}
-                </Descriptions.Item>
-                {currentSubmission.grade !== null && (
-                  <Descriptions.Item label="Grade">
-                    <span className="font-semibold text-lg">
-                      {currentSubmission.grade}/100
-                    </span>
-                  </Descriptions.Item>
-                )}
-                {currentSubmission.gradedAt && (
-                  <Descriptions.Item label="Graded At">
-                    {dayjs(currentSubmission.gradedAt).format('DD/MM/YYYY HH:mm')}
-                  </Descriptions.Item>
-                )}
-                {currentSubmission.feedback && (
-                  <Descriptions.Item label="Instructor Feedback" span={2}>
-                    {currentSubmission.feedback}
-                  </Descriptions.Item>
-                )}
-              </Descriptions>
+            {submissionHistory.allVersions &&
+              submissionHistory.allVersions.length > 0 ? (
+                <div>
+                  <h4 className="font-semibold text-lg mb-3">
+                    All Versions ({submissionHistory.allVersions.length})
+                  </h4>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {submissionHistory.allVersions.map((submission, index) => {
+                      const isLatest = index === 0;
+                      return (
+                        <div
+                          key={submission.submissionId}
+                          className={`border rounded p-4 transition-shadow ${
+                            isLatest ? 'border-blue-400 bg-blue-50' : 'hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">
+                                Version {submission.version}
+                              </span>
+                              {isLatest && (
+                                <Tag color="blue">Latest</Tag>
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {dayjs(submission.submittedAt).format(
+                                "DD/MM/YYYY HH:mm"
+                              )}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-2 mb-3">
+                            <p className="text-sm text-gray-600">
+                              <span className="font-medium">Submitted By:</span>{" "}
+                              {submission.submittedByName || submission.submittedBy}
+                            </p>
+                            {submission.description && (
+                              <p className="text-sm text-gray-700">
+                                <span className="font-medium">Description:</span>{" "}
+                                {submission.description}
+                              </p>
+                            )}
+                            {submission.submissionNotes && (
+                              <p className="text-sm text-gray-700">
+                                <span className="font-medium">Notes:</span>{" "}
+                                {submission.submissionNotes}
+                              </p>
+                            )}
+                                                  
+                          </div>
 
-              {/* Files for latest submission */}
-              <div className="mt-4">
-                <h4 className="font-medium mb-2">Submitted Files ({submissionFiles.length})</h4>
-                {submissionFiles.length > 0 ? (
-                  <div className="space-y-2">
-                    {submissionFiles.map((file) => (
-                      <div
-                        key={file.fileId}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-500" />
-                          <a
-                            href={file.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {file.fileName}
-                          </a>
+                          {submission.files && submission.files.length > 0 && (
+                            <div className="mt-3 pt-3 border-t">
+                              <h5 className="font-medium text-sm mb-2">
+                                Files ({submission.files.length})
+                              </h5>
+                              <div className="space-y-1">
+                                {submission.files.map((file) => (
+                                  <div
+                                    key={file.fileId}
+                                    className="flex items-center justify-between p-2 bg-white rounded hover:bg-gray-100"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-4 h-4 text-gray-500" />
+                                      <a
+                                        href={file.fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline text-sm"
+                                      >
+                                        {file.fileName}
+                                      </a>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {dayjs(file.uploadedAt).format("DD/MM HH:mm")}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <span className="text-sm text-gray-500">
-                          {dayjs(file.uploadedAt).format('DD/MM HH:mm')}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
-                ) : (
-                  <Empty description="No files uploaded" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Empty 
-                description="No submissions yet for this milestone"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            </div>
-          )}
-
-          {/* All Versions */}
-          {submissionHistory.allVersions && submissionHistory.allVersions.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-lg mb-3">All Versions ({submissionHistory.allVersions.length})</h4>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {submissionHistory.allVersions.map((submission) => (
-                  <div
-                    key={submission.submissionId}
-                    className="border rounded p-3 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">Version {submission.version}</span>
-                        <Tag color={getStatusColor(submission.status)}>
-                          {submission.status}
-                        </Tag>
-                        {submission.grade !== null && (
-                          <Tag color="green">Grade: {submission.grade}/100</Tag>
-                        )}
-                      </div>
-                      <span className="text-sm text-gray-500">
-                        {dayjs(submission.submittedAt).format('DD/MM/YYYY HH:mm')}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium">By:</span> {submission.submittedByName || submission.submittedBy}
-                    </p>
-                    {submission.description && (
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">Description:</span> {submission.description}
-                      </p>
-                    )}
-                    {submission.feedback && (
-                      <p className="text-sm text-orange-700 mt-2 p-2 bg-orange-50 rounded">
-                        <span className="font-medium">Feedback:</span> {submission.feedback}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <Empty 
-            description="No submission history available"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        </div>
-      )}
-    </Modal>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Empty
+                    description="No submissions yet for this milestone"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                </div>
+              )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Empty
+              description="No submission history available"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          </div>
+        )}
+      </Modal>
     </>
   );
 }

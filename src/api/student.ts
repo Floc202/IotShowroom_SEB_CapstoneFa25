@@ -6,6 +6,7 @@ import type {
   StudentGroupDetail,
   GroupInvitationList,
   RejectGroupInvitationRequest,
+  StudentProjectGrades,
 } from "../types/student";
 
 const BASE = "/student";
@@ -34,5 +35,10 @@ export const getGroupInvitations = () =>
 
 export const rejectGroupInvitation = (payload: RejectGroupInvitationRequest) =>
   api
-    .post<ApiEnvelope<boolean>>(`${BASE}/reject-group-invitation`, payload)
+    .post<ApiEnvelope<boolean>>(`${BASE}/group-invitations/reject`, payload)
+    .then((r) => r.data);
+
+export const getStudentProjectGrades = (projectId: Id) =>
+  api
+    .get<ApiEnvelope<StudentProjectGrades>>(`${BASE}/projects/${projectId}/grades`)
     .then((r) => r.data);
