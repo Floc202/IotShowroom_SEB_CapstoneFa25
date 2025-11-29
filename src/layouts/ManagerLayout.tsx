@@ -6,11 +6,9 @@ import {
   Home,
   Users,
   BookOpen,
-  Monitor,
   Trophy,
   MessageSquare,
   BarChart3,
-  Settings,
   Bell,
   User as UserIcon,
   LogOut,
@@ -49,7 +47,7 @@ export default function ManagerLayout() {
         { id: "/admin/users", icon: Users, label: "User Management" },
         { id: "/admin/semesters", icon: Calendar, label: "Semester Management" },
         { id: "/admin/classes", icon: BookOpen, label: "Classes" },
-        { id: "/admin/monitoring", icon: Monitor, label: "Project Monitoring" },
+        // { id: "/admin/monitoring", icon: Monitor, label: "Project Monitoring" },
         { id: "/admin/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         {
           id: "/admin/announcements",
@@ -57,20 +55,12 @@ export default function ManagerLayout() {
           label: "Announcements",
         },
         { id: "/admin/reports", icon: BarChart3, label: "Reports" },
-        { id: "/admin/settings", icon: Settings, label: "System Settings" },
+        // { id: "/admin/settings", icon: Settings, label: "System Settings" },
       ];
     if (role === ROLES.INSTRUCTOR)
       return [
         { id: "/instructor/dashboard", icon: Home, label: "Dashboard" },
         { id: "/instructor/classes", icon: BookOpen, label: "Classes" },
-        // { id: "/instructor/groups", icon: Users, label: "Groups" },
-        // {
-        //   id: "/instructor/proposals",
-        //   icon: ClipboardCheck,
-        //   label: "Proposals",
-        // },
-        // { id: "/instructor/milestones", icon: Target, label: "Milestones" },
-        // { id: "/instructor/grading", icon: FileCheck, label: "Grading" },
         {
           id: "/instructor/announcements",
           icon: MessageSquare,
@@ -82,7 +72,6 @@ export default function ManagerLayout() {
       return [
         { id: "/student/dashboard", icon: Home, label: "Dashboard" },
         { id: "/student/classes", icon: BookOpen, label: "My Classes" },
-        // { id: "/student/projects", icon: FolderOpen, label: "My Projects" },
         { id: "/notifications", icon: Bell, label: "Notifications" },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];

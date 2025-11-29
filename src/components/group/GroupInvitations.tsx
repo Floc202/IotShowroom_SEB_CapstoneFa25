@@ -59,15 +59,10 @@ export default function GroupInvitations({ onChanged }: GroupInvitationsProps) {
 
     try {
       setActionLoading(true);
-      const res = await acceptInvite({
+      await acceptInvite({
         groupId,
         userId: user.userId,
       });
-
-      if (!res.isSuccess) {
-        toast.error(res.message || "Failed to accept invitation");
-        return;
-      }
 
       toast.success("Invitation accepted successfully");
       fetchInvitations();
@@ -128,14 +123,19 @@ export default function GroupInvitations({ onChanged }: GroupInvitationsProps) {
     },
     {
       title: "Invited By",
-      dataIndex: "inviterName",
-      key: "inviterName",
+      dataIndex: "invitedBy",
+      key: "invitedBy",
+      render: (text: string, record: GroupInvitation) => 
+        text || record.inviterName || "-",
     },
     {
       title: "Invited At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date: string) => new Date(date).toLocaleString(),
+      dataIndex: "invitedAt",
+      key: "invitedAt",
+      render: (date: string, record: GroupInvitation) => {
+        const dateStr = date || record.createdAt;
+        return dateStr ? new Date(dateStr).toLocaleString() : "-";
+      },
     },
     {
       title: "Actions",
@@ -188,7 +188,7 @@ export default function GroupInvitations({ onChanged }: GroupInvitationsProps) {
       >
         {invitations.length > 0 ? (
           <Table<GroupInvitation>
-            rowKey="invitationId"
+            rowKey={(record) => record.notificationId || record.invitationId || record.groupId}
             columns={columns}
             dataSource={invitations}
             pagination={{ pageSize: 5, showSizeChanger: true }}

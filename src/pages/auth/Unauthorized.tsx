@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export default function Unauthorized() {
   return (
-    <div className="max-w-lg mx-auto text-center space-y-4">
+    <div className="max-w-lg mx-auto text-center space-y-4 mt-40 mb-40">
       <h1 className="text-2xl font-bold text-red-600">
         Bạn không có thẩm quyền để vào trang này
       </h1>

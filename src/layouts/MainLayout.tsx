@@ -14,7 +14,7 @@ export default function MainLayout() {
       const dashboardPath = roleRedirectMap[user.roleName];
       navigate(dashboardPath);
     } else {
-      navigate("/dashboard"); 
+      navigate("/dashboard");
     }
   };
 

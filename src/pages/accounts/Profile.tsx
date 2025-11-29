@@ -263,10 +263,6 @@ export default function Profile() {
             <Input placeholder="0123456789" />
           </Form.Item>
 
-          {/* <Form.Item name="newPassword" label="Mật khẩu mới">
-            <Input.Password placeholder="••••••••" />
-          </Form.Item> */}
-
           <Form.Item
             label="Ảnh đại diện"
             name="avatarFile"

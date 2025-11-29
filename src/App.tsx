@@ -8,7 +8,9 @@ import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+import Dashboard from "./pages/admin/Dashboard";
+import HallOfFame from "./pages/admin/HallOfFame";
+import AdminReports from "./pages/admin/AdminReports";
 import InstructorDashboard from "./pages/dashboards/InstructorDashboard";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import { ROLES } from "./utils/constants";
@@ -24,6 +26,7 @@ import StudentClassDetail from "./pages/student/StudentClassDetail";
 import InstructorClasses from "./pages/instructor/InstructorClasses";
 import InstructorClassDetail from "./pages/instructor/InstructorClassDetail";
 import InstructorGroupDetail from "./pages/instructor/InstructorGroupDetail";
+import Notifications from "./pages/Notifications";
 
 export default function App() {
   return (
@@ -31,7 +34,6 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public / Guest */}
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
@@ -42,7 +44,6 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Instructor */}
             <Route element={<ProtectedRoute allow={[ROLES.INSTRUCTOR]} />}>
               <Route element={<ManagerLayout />}>
                 <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
@@ -52,7 +53,6 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Student */}
             <Route element={<ProtectedRoute allow={[ROLES.STUDENT]} />}>
               <Route element={<ManagerLayout />}>
                 <Route
@@ -70,10 +70,11 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* Admin */}
             <Route element={<ProtectedRoute allow={[ROLES.ADMIN]} />}>
               <Route element={<ManagerLayout />}>
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/dashboard" element={<Dashboard />} />
+                <Route path="/admin/hall-of-fame" element={<HallOfFame />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
                 <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/classes/" element={<ClassManagement />} />
                 <Route
@@ -87,7 +88,6 @@ export default function App() {
               </Route>
             </Route>
 
-            {/* General */}
             <Route
               element={
                 <ProtectedRoute
@@ -97,6 +97,7 @@ export default function App() {
             >
               <Route element={<ManagerLayout />}>
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/notifications" element={<Notifications />} />
               </Route>
             </Route>
 
