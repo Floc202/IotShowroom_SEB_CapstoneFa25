@@ -19,7 +19,7 @@ export interface CreateSemesterDto {
   term: string;
   startDate: string; 
   endDate: string; 
-  isActive: boolean;
+  // isActive: boolean;
 }
 
 export interface UpdateSemesterDto {

@@ -1,4 +1,5 @@
 import type { RoleName } from "../types/auth";
+import dayjs from "dayjs";
 
 export const getErrorMessage = (err: unknown): string => {
   if (!err) return "Something went wrong";
@@ -49,4 +50,9 @@ export const roleRedirectMap: Record<RoleName, string> = {
   Admin: "/admin/dashboard",
   Instructor: "/instructor/dashboard",
   Student: "/student/dashboard",
+};
+
+export const formatVietnamTime = (utcTime: string | null | undefined, format: string = "DD/MM/YYYY, HH:mm"): string => {
+  if (!utcTime) return "—";
+  return dayjs(utcTime).add(7, 'hour').format(format);
 };

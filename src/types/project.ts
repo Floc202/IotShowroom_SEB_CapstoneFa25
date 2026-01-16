@@ -4,8 +4,7 @@ export interface ProjectDetail {
   projectId: Id;
   title: string;
   description: string | null;
-  purpose?: string | null;
-  expectedTechnology?: string | null;
+  component?: string | null;
   status: string;
   leaderId: Id;
   leaderName: string;
@@ -29,8 +28,7 @@ export interface CreateProjectRequest {
   groupId: Id;
   title: string;
   description: string;
-  purpose: string;
-  expectedTechnology: string;
+  component: string;
 }
 
 export interface UpdateProjectRequest {
@@ -38,8 +36,7 @@ export interface UpdateProjectRequest {
   requesterUserId: Id;
   title: string;
   description: string;
-  purpose: string;
-  expectedTechnology: string;
+  component: string;
 }
 
 export interface UpdateProjectStatusRequest {

@@ -135,3 +135,68 @@ export interface StudentProjectGrades {
     projectedFinalGrade: number;
   };
 }
+
+export interface SubmissionValidation {
+  canSubmit: boolean;
+  isLate: boolean;
+  status: "NotStarted" | "Open" | "Late" | "Closed";
+  message: string;
+  deadlineDate: string | null;
+  applicablePenaltyPercent: number | null;
+}
+
+export interface EditPeriodValidation {
+  canEdit: boolean;
+  status: "NotConfigured" | "NotStarted" | "Open" | "Closed";
+  message: string;
+  windowStartDate: string | null;
+  windowEndDate: string | null;
+}
+
+export interface StudentCourseHistory {
+  historyId: Id;
+  studentId: Id;
+  studentName: string;
+  studentEmail: string;
+  semesterId: Id;
+  semesterName: string;
+  status: string;
+  finalSubmissionId: Id;
+  finalGrade: number;
+  averageGradeFromOtherInstructors: number;
+  evaluatedAt: string;
+  notes: string;
+  completedAt: string;
+  isRetake: boolean;
+  isCurrent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectGrader {
+  graderId: Id;
+  graderName: string;
+  graderEmail: string;
+  grade: number | null;
+  feedback: string | null;
+  gradedAt: string | null;
+  status: string;
+}
+
+export interface ProjectGradersInfo {
+  projectId: Id;
+  projectTitle: string;
+  groupId: Id;
+  groupName: string;
+  projectStatus: string;
+  averageGrade: number | null;
+  totalGradersAssigned: number;
+  gradersCompleted: number;
+  finalSubmission: {
+    finalSubmissionId: Id;
+    submittedAt: string | null;
+    hasSubmission: boolean;
+    isGraded: boolean;
+  } | null;
+  graders: ProjectGrader[];
+}

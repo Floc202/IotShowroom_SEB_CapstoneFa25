@@ -22,6 +22,12 @@ import type {
   AddStudentToClassDto,
   AddStudentToClassResult,
   ClassStudentsResult,
+  GraderAssignment,
+  AssignGraderRequest,
+  BulkAssignGradersRequest,
+  UpdateGraderStatusRequest,
+  GradingStatistics,
+  ImportStudentsResult,
 } from "../types/admin";
 
 export const getAdminOverview = () =>
@@ -146,6 +152,13 @@ export const exportReports = (payload: ExportReportDto) =>
     .post<ApiEnvelope<ExportReportResult>>("Admin/reports/export", payload)
     .then((r) => r.data);
 
+export const exportComprehensiveReport = (semesterId: number) =>
+  api
+    .get<Blob>(`Admin/reports/semester/${semesterId}/comprehensive-export`, {
+      responseType: 'blob',
+    })
+    .then((r) => r.data);
+
 export const bulkAddStudents = (payload: BulkAddStudentsDto) =>
   api
     .post<ApiEnvelope<BulkAddStudentsResult>>(
@@ -174,5 +187,63 @@ export const removeStudentFromClass = (classId: number, studentId: number) =>
   api
     .delete<ApiEnvelope<boolean>>(
       `Admin/classes/${classId}/students/${studentId}`
+    )
+    .then((r) => r.data);
+
+export const importStudentsToClass = (classId: number, excelFile : File) => {
+  const formData = new FormData();
+  formData.append("excelFile", excelFile);
+  return api
+    .post<ApiEnvelope<ImportStudentsResult>>(
+      `Admin/classes/${classId}/import-students`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    )
+    .then((r) => r.data);
+};
+export const getClassGraders = (classId: number) =>
+  api
+    .get<ApiEnvelope<GraderAssignment[]>>(`Admin/classes/${classId}/graders`)
+    .then((r) => r.data);
+
+export const assignGrader = (payload: AssignGraderRequest) =>
+  api
+    .post<ApiEnvelope<GraderAssignment>>(`Admin/graders/assign`, payload)
+    .then((r) => r.data);
+
+export const bulkAssignGraders = (payload: BulkAssignGradersRequest) =>
+  api
+    .post<ApiEnvelope<GraderAssignment[]>>(`Admin/graders/bulk-assign`, payload)
+    .then((r) => r.data);
+
+export const removeGrader = (graderId: number) =>
+  api
+    .delete<ApiEnvelope<boolean>>(`Admin/graders/${graderId}`)
+    .then((r) => r.data);
+
+export const updateGraderStatus = (
+  graderId: number,
+  payload: UpdateGraderStatusRequest
+) =>
+  api
+    .put<ApiEnvelope<GraderAssignment>>(
+      `Admin/graders/${graderId}/status`,
+      payload
+    )
+    .then((r) => r.data);
+
+export const getAllGraders = () =>
+  api
+    .get<ApiEnvelope<GraderAssignment[]>>(`Admin/graders`)
+    .then((r) => r.data);
+
+export const getGradingStatistics = (classId: number) =>
+  api
+    .get<ApiEnvelope<GradingStatistics>>(
+      `Admin/classes/${classId}/grading-statistics`
     )
     .then((r) => r.data);

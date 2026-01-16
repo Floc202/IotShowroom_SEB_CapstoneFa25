@@ -276,3 +276,88 @@ export interface ClassStudentsResult {
     enrolledAt: string; 
   }>;
 }
+export interface GraderAssignment {
+  graderId: number;
+  classId: number;
+  className: string;
+  classDescription: string | null;
+  instructorId: number;
+  instructorName: string;
+  instructorEmail: string;
+  assignedAt: string;
+  assignedBy: number;
+  assignedByName: string;
+  isActive: boolean;
+  totalFinalSubmissions: number;
+  gradedByThisInstructor: number;
+  pendingGrades: number;
+}
+
+export interface AssignGraderRequest {
+  classId: number;
+  instructorId: number;
+}
+
+export interface BulkAssignGradersRequest {
+  classId: number;
+  instructorIds: number[];
+}
+
+export interface UpdateGraderStatusRequest {
+  isActive: boolean;
+}
+
+export interface GraderWorkload {
+  instructorId: number;
+  instructorName: string;
+  instructorEmail: string;
+  isActive: boolean;
+  totalAssignedSubmissions: number;
+  gradedCount: number;
+  pendingCount: number;
+  completionPercentage: number;
+  averageGradeGiven: number | null;
+}
+
+export interface GradingStatistics {
+  classId: number;
+  className: string;
+  semesterId: number;
+  semesterName: string;
+  totalAssignedGraders: number;
+  activeGraders: number;
+  graderWorkloads: GraderWorkload[];
+  totalProjects: number;
+  approvedProjects: number;
+  projectsWithFinalSubmission: number;
+  totalGradesSubmitted: number;
+  fullyGradedProjects: number;
+  partiallyGradedProjects: number;
+  ungradedProjects: number;
+  averageGrade: number;
+  highestGrade: number | null;
+  lowestGrade: number | null;
+  gradingCompletionPercentage: number;
+}
+
+export interface ImportStudentsResult {
+  classId: number;
+  className: string;
+  totalRows: number;
+  successCount: number;
+  failedCount: number;
+  successfulStudents: Array<{
+    rowNumber: number;
+    email: string;
+    studentName: string;
+    userId: number;
+  }>;
+  failedStudents: Array<{
+    rowNumber: number;
+    email: string;
+    status: string;
+    reason: string;
+    reasonCode: string;
+  }>;
+  message: string;
+}

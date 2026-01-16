@@ -66,6 +66,10 @@ export default function ProjectGradesCard({ projectId, role }: ProjectGradesCard
     }
   };
 
+  if (role === "student" && !studentGrades) {
+    return null;
+  }
+
   if (role === "student") {
     const studentColumns: ColumnsType<StudentMilestoneGrade> = [
       {
@@ -115,7 +119,14 @@ export default function ProjectGradesCard({ projectId, role }: ProjectGradesCard
         dataIndex: "gradedAt",
         key: "gradedAt",
         render: (date: string | null) => 
-          date ? new Date(date).toLocaleString() : "—",
+          date ? new Date(new Date(date).getTime() + 7 * 60 * 60 * 1000).toLocaleString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }) : "—",
       },
       {
         title: "Feedback",
@@ -244,7 +255,14 @@ export default function ProjectGradesCard({ projectId, role }: ProjectGradesCard
       title: "Evaluated At",
       dataIndex: "evaluatedAt",
       key: "evaluatedAt",
-      render: (date: string) => new Date(date).toLocaleString(),
+      render: (date: string) => new Date(new Date(date).getTime() + 7 * 60 * 60 * 1000).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }),
     },
     {
       title: "Feedback",

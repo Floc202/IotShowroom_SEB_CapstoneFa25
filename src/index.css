@@ -9,3 +9,11 @@
 .mb-important {
     margin-bottom: 24px !important;
 }
+
+.mb-0-important {
+    margin-bottom: 0px !important;
+}
+
+.m-divider {
+  margin: 0px !important
+}

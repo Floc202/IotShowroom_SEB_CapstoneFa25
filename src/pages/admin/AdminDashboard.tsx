@@ -254,8 +254,8 @@ const AdminDashboard = ({}) => {
 
             <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
               <FolderOpen className="w-6 h-6 text-emerald-600 mb-2" />
-              <h3 className="font-medium text-gray-900">Announcements</h3>
-              <p className="text-sm text-gray-600">Send system announcements</p>
+              <h3 className="font-medium text-gray-900">Notifications</h3>
+              <p className="text-sm text-gray-600">Send system notifications</p>
             </button>
 
             <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">

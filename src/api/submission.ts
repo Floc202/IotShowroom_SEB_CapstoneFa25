@@ -53,5 +53,5 @@ export const getSubmissionFiles = (submissionId: Id) =>
 
 export const deleteSubmissionFile = (fileId: Id) =>
   api
-    .delete<ApiEnvelope<boolean>>(`${BASE}/files/${fileId}`)
+    .delete<ApiEnvelope<boolean>>(`${MILESTONE_BASE}/files/${fileId}`)
     .then((r) => r.data);

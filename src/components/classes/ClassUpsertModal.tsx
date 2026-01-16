@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Modal, Form, Input, Select } from "antd";
+import { Modal, Form, Input, Select, DatePicker } from "antd";
+import dayjs from "dayjs";
 import type { Semester } from "../../types/semesters";
 import type { ClassItem, CreateClassRequest, UpdateClassRequest } from "../../types/classes";
 
@@ -30,6 +31,7 @@ export default function ClassUpsertModal({
           description: editing.description,
           semesterId: editing.semesterId,
           instructorId: editing.instructorId,
+          startTime: editing.startTime ? dayjs(editing.startTime) : null,
         });
       } else {
         form.resetFields();
@@ -44,6 +46,7 @@ export default function ClassUpsertModal({
         className: values.className,
         description: values.description,
         instructorId: values.instructorId,
+        startTime: values.startTime ? dayjs(values.startTime).format('YYYY-MM-DDTHH:mm:ss') : null,
       };
       onSubmit(payload);
     } else {
@@ -109,6 +112,17 @@ export default function ClassUpsertModal({
         <Form.Item label="Description" name="description">
           <Input.TextArea rows={4} placeholder="Optional description…" />
         </Form.Item>
+
+        {editing && (
+          <Form.Item label="Start Time" name="startTime">
+            <DatePicker 
+              showTime 
+              className="w-full" 
+              format="YYYY-MM-DD HH:mm"
+              disabledDate={(current) => current && current < dayjs().startOf('day')}
+            />
+          </Form.Item>
+        )}
       </Form>
     </Modal>
   );

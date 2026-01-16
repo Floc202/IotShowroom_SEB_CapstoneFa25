@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, Select, Tabs, Table, Spin, Empty, Typography, Row, Col, Statistic, Tag } from "antd";
-import { FileText, Users, FolderOpen, TrendingUp, BookOpen, Award } from "lucide-react";
+import { Card, Select, Tabs, Table, Spin, Empty, Typography, Row, Col, Statistic, Tag, Button } from "antd";
+import { FileText, Users, FolderOpen, TrendingUp, BookOpen, Award, Download } from "lucide-react";
 import {
   getInstructorsWorkloadReport,
   getStudentsDistributionReport,
   getProjectsStatusReport,
   getMilestoneProgressReport,
   getGradesDistributionReport,
+  exportComprehensiveReport,
 } from "../../api/admin";
 import { listSemesters } from "../../api/semesters";
 import type {
@@ -34,6 +35,7 @@ export default function AdminReports() {
   const [projectsReport, setProjectsReport] = useState<ProjectsStatusReport | null>(null);
   const [milestonesReport, setMilestonesReport] = useState<MilestoneProgressReport | null>(null);
   const [gradesReport, setGradesReport] = useState<GradesDistributionReport | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchSemesters();
@@ -51,6 +53,33 @@ export default function AdminReports() {
       }
     } catch (e) {
       toast.error(getErrorMessage(e));
+    }
+  };
+
+  const handleExportReport = async () => {
+    if (!selectedSemester) {
+      toast.error("Please select a semester to export");
+      return;
+    }
+
+    try {
+      setExporting(true);
+      const blob = await exportComprehensiveReport(selectedSemester);
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `comprehensive-report-${selectedSemester}-${Date.now()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Report exported successfully");
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -128,17 +157,28 @@ export default function AdminReports() {
           <FileText className="w-8 h-8 inline-block mr-2 text-blue-600" />
           Reports
         </Title>
-        <Select
-          placeholder="All Semesters"
-          style={{ width: 300 }}
-          value={selectedSemester}
-          onChange={setSelectedSemester}
-          allowClear
-          options={semesters.map((s) => ({
-            label: `${s.name} (${s.year} - ${s.term})`,
-            value: s.semesterId,
-          }))}
-        />
+        <div className="flex items-center gap-3">
+          <Select
+            placeholder="All Semesters"
+            style={{ width: 300 }}
+            value={selectedSemester}
+            onChange={setSelectedSemester}
+            allowClear
+            options={semesters.map((s) => ({
+              label: `${s.name} (${s.year} - ${s.term})`,
+              value: s.semesterId,
+            }))}
+          />
+          <Button
+            type="primary"
+            icon={<Download className="w-4 h-4" />}
+            onClick={handleExportReport}
+            loading={exporting}
+            disabled={!selectedSemester}
+          >
+            Export Report
+          </Button>
+        </div>
       </div>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>

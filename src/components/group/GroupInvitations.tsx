@@ -22,9 +22,10 @@ import { useAuth } from "../../providers/AuthProvider";
 
 interface GroupInvitationsProps {
   onChanged?: () => void;
+  classId?: number;
 }
 
-export default function GroupInvitations({ onChanged }: GroupInvitationsProps) {
+export default function GroupInvitations({ onChanged, classId }: GroupInvitationsProps) {
   const { user } = useAuth();
   const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,7 +39,13 @@ export default function GroupInvitations({ onChanged }: GroupInvitationsProps) {
       setLoading(true);
       const res = await getGroupInvitations();
       if (res.isSuccess && res.data) {
-        setInvitations(res.data.pendingInvitations || []);
+        let filtered = res.data.pendingInvitations || [];
+        
+        if (classId) {
+          filtered = filtered.filter(inv => inv.classId === classId);
+        }
+        
+        setInvitations(filtered);
       }
     } catch (e) {
       toast.error(getErrorMessage(e));

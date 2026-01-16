@@ -10,6 +10,8 @@ export interface ClassItem {
   semesterName: string | null;
   semesterCode: string | null;
   createdAt: string; 
+  status: "Not Started" | "In Progress" | "Completed";
+  startTime: string | null;
   totalStudents: number;
   totalGroups: number;
   totalProjects: number;
@@ -40,6 +42,8 @@ export interface ClassDetail {
   semesterCode: string | null;
   description: string | null;
   createdAt: string; 
+  status: "Not Started" | "In Progress" | "Completed";
+  startTime: string | null;
   totalStudents: number;
   totalGroups: number;
   totalProjects: number;
@@ -58,6 +62,23 @@ export interface UpdateClassRequest {
   className: string;
   description?: string | null;
   instructorId?: Id | null;
+  startTime?: string | null;
+}
+
+export interface ChangeClassStatusRequest {
+  status: "Not Started" | "In Progress" | "Completed";
+}
+
+export interface ChangeClassStatusResponse {
+  classId: Id;
+  className: string;
+  oldStatus: string;
+  newStatus: string;
+  changedAt: string;
+  totalStudents: number;
+  studentsWithGroup: number;
+  studentsWithoutGroup: number;
+  warnings: string[];
 }
 
 export interface AssignInstructorRequest {

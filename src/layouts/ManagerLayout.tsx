@@ -13,9 +13,12 @@ import {
   User as UserIcon,
   LogOut,
   Calendar,
+  ClipboardCheck
 } from "lucide-react";
 import { ROLES } from "../utils/constants";
 import logo from "../assets/logo.png";
+import { useNotificationHub } from "../hooks/useNotificationHub";
+import toast from "react-hot-toast";
 
 const { Sider, Header, Content } = Layout;
 
@@ -24,6 +27,14 @@ export default function ManagerLayout() {
   const role = (user?.roleName || "").toString();
   const loc = useLocation();
   const navigate = useNavigate();
+
+  useNotificationHub({
+    onNotification: (notification) => {
+      toast.success(`${notification.title}: ${notification.message}`, {
+        duration: 5,
+      });
+    },
+  });
 
   const menu = [
     {
@@ -50,9 +61,9 @@ export default function ManagerLayout() {
         // { id: "/admin/monitoring", icon: Monitor, label: "Project Monitoring" },
         { id: "/admin/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         {
-          id: "/admin/announcements",
+          id: "/notifications",
           icon: MessageSquare,
-          label: "Announcements",
+          label: "Notifications",
         },
         { id: "/admin/reports", icon: BarChart3, label: "Reports" },
         // { id: "/admin/settings", icon: Settings, label: "System Settings" },
@@ -61,10 +72,11 @@ export default function ManagerLayout() {
       return [
         { id: "/instructor/dashboard", icon: Home, label: "Dashboard" },
         { id: "/instructor/classes", icon: BookOpen, label: "Classes" },
+        { id: "/instructor/grading", icon: ClipboardCheck, label: "Grading" },
         {
-          id: "/instructor/announcements",
+          id: "/notifications",
           icon: MessageSquare,
-          label: "Announcements",
+          label: "Notifications",
         },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
@@ -94,7 +106,6 @@ export default function ManagerLayout() {
               alt="IoT Showroom Logo"
               className="w-24 h-24 object-contain"
             />
-            <div className="text-lg font-bold text-gray-900">IoT Showroom</div>
           </div>
         </div>
 
