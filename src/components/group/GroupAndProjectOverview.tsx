@@ -1,20 +1,17 @@
 import { useEffect, useState, useMemo } from "react";
 import { Form } from "antd";
 import { getGroupById } from "../../api/group";
-import { getProjectByGroup, updateProject } from "../../api/project";
+import { getProjectByGroup, updateProject, deleteProject } from "../../api/project";
 import type { GroupDetail } from "../../types/group";
 import type { ProjectDetail, UpdateProjectRequest } from "../../types/project";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
 import {
   inviteToGroup,
-  kickMember,
-  leaveGroup,
   updateGroup,
 } from "../../api/group";
 import { createProject } from "../../api/project";
 import { useAuth } from "../../providers/AuthProvider";
-import GroupOverviewCard from "./GroupOverviewCard";
 import ProjectOverviewCard from "./ProjectOverviewCard";
 import GroupModals from "./GroupModals";
 
@@ -48,8 +45,8 @@ export default function GroupAndProjectOverview({
     groupName: string;
     description?: string;
   }>();
-  const [projectForm] = Form.useForm<{ title: string; description?: string; purpose: string; expectedTechnology: string }>();
-  const [projectUpdateForm] = Form.useForm<{ title: string; description?: string; purpose: string; expectedTechnology: string }>();
+  const [projectForm] = Form.useForm<{ title: string; description: string; component: string }>();
+  const [projectUpdateForm] = Form.useForm<{ title: string; description: string; component: string }>();
 
   const fetchData = async () => {
     try {
@@ -58,9 +55,6 @@ export default function GroupAndProjectOverview({
         getGroupById(groupId),
         getProjectByGroup(groupId),
       ]);
-
-
-      console.log("Fetched project data:", projectData);
 
       if (groupData.status === "fulfilled") {
         setDetail(groupData.value);
@@ -126,38 +120,38 @@ export default function GroupAndProjectOverview({
     }
   };
 
-  const doKick = async (targetUserId: number) => {
-    try {
-      if (!requesterId) return toast.error("Missing requester");
-      setActionLoading(true);
-      await kickMember({
-        groupId,
-        targetUserId,
-        requesterUserId: requesterId,
-      });
-      toast.success("Member removed");
-      fetchData();
-      onChanged?.();
-    } catch (e) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  // const doKick = async (targetUserId: number) => {
+  //   try {
+  //     if (!requesterId) return toast.error("Missing requester");
+  //     setActionLoading(true);
+  //     await kickMember({
+  //       groupId,
+  //       targetUserId,
+  //       requesterUserId: requesterId,
+  //     });
+  //     toast.success("Member removed");
+  //     fetchData();
+  //     onChanged?.();
+  //   } catch (e) {
+  //     toast.error(getErrorMessage(e));
+  //   } finally {
+  //     setActionLoading(false);
+  //   }
+  // };
 
-  const doLeave = async () => {
-    try {
-      if (!user?.userId) return toast.error("Missing user");
-      setActionLoading(true);
-      await leaveGroup({ groupId, userId: user.userId });
-      toast.success("You left the group");
-      onChanged?.();
-    } catch (e) {
-      toast.error(getErrorMessage(e));
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  // const doLeave = async () => {
+  //   try {
+  //     if (!user?.userId) return toast.error("Missing user");
+  //     setActionLoading(true);
+  //     await leaveGroup({ groupId, userId: user.userId });
+  //     toast.success("You left the group");
+  //     onChanged?.();
+  //   } catch (e) {
+  //     toast.error(getErrorMessage(e));
+  //   } finally {
+  //     setActionLoading(false);
+  //   }
+  // };
 
   const doUpdate = async () => {
     try {
@@ -190,9 +184,8 @@ export default function GroupAndProjectOverview({
       await createProject({
         groupId,
         title: v.title.trim(),
-        description: v.description?.trim() || "",
-        purpose: v.purpose.trim(),
-        expectedTechnology: v.expectedTechnology.trim(),
+        description: v.description.trim(),
+        component: v.component.trim(),
       });
 
       toast.success("Project created");
@@ -217,9 +210,8 @@ export default function GroupAndProjectOverview({
         projectId: selectedProjectId,
         requesterUserId: requesterId,
         title: v.title.trim(),
-        description: v.description?.trim() || "",
-        purpose: v.purpose.trim(),
-        expectedTechnology: v.expectedTechnology.trim(),
+        description: v.description.trim(),
+        component: v.component.trim(),
       };
       
       await updateProject(payload);
@@ -230,12 +222,32 @@ export default function GroupAndProjectOverview({
       
       setProjects(projects.map(p => 
         p.projectId === selectedProjectId
-          ? { ...p, title: payload.title, description: payload.description, purpose: payload.purpose, expectedTechnology: payload.expectedTechnology }
+          ? { ...p, title: payload.title, description: payload.description, component: payload.component }
           : p
       ));
       setSelectedProjectId(null);
       
       onChanged?.();
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const doDeleteProject = async (projectId: number) => {
+    try {
+      setActionLoading(true);
+      const res = await deleteProject(projectId);
+      
+      if (res.isSuccess) {
+        toast.success("Project deleted successfully");
+        setProjects(projects.filter(p => p.projectId !== projectId));
+        fetchData();
+        onChanged?.();
+      } else {
+        toast.error(res.message || "Failed to delete project");
+      }
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -257,26 +269,7 @@ export default function GroupAndProjectOverview({
   }, [projects]);
 
   return (
-    <div className="space-y-6">
-      {detail && (
-        <GroupOverviewCard
-          detail={detail}
-          loading={loading}
-          isLeader={isLeader}
-          currentUserId={user?.userId}
-          onInvite={() => setInviteOpen(true)}
-          onUpdate={() => {
-            updateForm.setFieldsValue({
-              groupName: detail.groupName,
-              description: detail.description || "",
-            });
-            setUpdateOpen(true);
-          }}
-          onKick={doKick}
-          onLeave={doLeave}
-        />
-      )}
-
+    <div className="space-y-6 mt-4">
       <ProjectOverviewCard
         projects={projects}
         loading={loading}
@@ -292,12 +285,12 @@ export default function GroupAndProjectOverview({
             projectUpdateForm.setFieldsValue({
               title: project.title,
               description: project.description || undefined,
-              purpose: project.purpose || undefined,
-              expectedTechnology: project.expectedTechnology || undefined,
+              component: project.component || undefined,
             });
             setProjectUpdateOpen(true);
           }
         }}
+        onDeleteProject={doDeleteProject}
       />
 
       <GroupModals

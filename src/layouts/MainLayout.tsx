@@ -4,10 +4,20 @@ import { useAuth } from "../providers/AuthProvider";
 import { Github, Mail } from "lucide-react";
 import { roleRedirectMap } from "../utils/helpers";
 import logo from "../assets/logo.png";
+import { useNotificationHub } from "../hooks/useNotificationHub";
+import toast from "react-hot-toast";
 
 export default function MainLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  useNotificationHub({
+    onNotification: (notification) => {
+      toast.success(`${notification.title}: ${notification.message}`, {
+        duration: 5,
+      });
+    },
+  });
 
   const handleDashboardClick = () => {
     if (user?.roleName) {
@@ -122,9 +132,7 @@ export default function MainLayout() {
                   alt="IoT Showroom Logo"
                   className="w-10 h-10 object-contain"
                 />
-                <span className="text-xl font-bold text-white">
-                  IoT Showroom
-                </span>
+               
               </div>
               <p className="text-gray-400 text-sm">
                 The comprehensive platform for IoT project management in

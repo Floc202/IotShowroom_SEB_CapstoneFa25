@@ -23,9 +23,13 @@ import ClassManagement from "./pages/admin/ClassManagement";
 import StudentClassManagement from "./pages/student/StudentClassManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import StudentClassDetail from "./pages/student/StudentClassDetail";
+import StudentSimulation from "./pages/student/StudentSimulation";
 import InstructorClasses from "./pages/instructor/InstructorClasses";
 import InstructorClassDetail from "./pages/instructor/InstructorClassDetail";
 import InstructorGroupDetail from "./pages/instructor/InstructorGroupDetail";
+import InstructorSimulationView from "./pages/instructor/InstructorSimulationView";
+import GradingManagement from "./pages/instructor/GradingManagement";
+import InstructorGradingSubmissionView from "./pages/instructor/InstructorGradingSubmissionView";
 import Notifications from "./pages/Notifications";
 
 export default function App() {
@@ -50,6 +54,9 @@ export default function App() {
                 <Route path="/instructor/classes" element={<InstructorClasses />} />
                 <Route path="/instructor/classes/:id" element={<InstructorClassDetail />} />
                 <Route path="/instructor/classes/:classId/groups/:groupId" element={<InstructorGroupDetail />} />
+                <Route path="/instructor/classes/:classId/groups/:groupId/simulation" element={<InstructorSimulationView />} />
+                <Route path="/instructor/grading" element={<GradingManagement />} />
+                <Route path="/instructor/grading/submission" element={<InstructorGradingSubmissionView />} />
               </Route>
             </Route>
 
@@ -67,6 +74,13 @@ export default function App() {
                   path="/student/classes/:id"
                   element={<StudentClassDetail />}
                 />
+                <Route
+                  path="/student/classes/:id/simulation"
+                  element={<StudentSimulation />}
+                />
+
+               
+                
               </Route>
             </Route>
 

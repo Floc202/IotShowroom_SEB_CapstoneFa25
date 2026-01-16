@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { Empty, Table, Tag, Tooltip, Button, Popover } from "antd";
+import { Empty, Table, Tag, Tooltip, Button } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import { Eye, MoreHorizontal, RefreshCcw, Users } from "lucide-react";
+import { Eye, RefreshCcw, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getStudentClasses } from "../../api/student";
 import type { StudentClassItem } from "../../types/student";
@@ -24,7 +24,7 @@ export default function StudentClassManagement() {
       }
       const sorted = (res.data || [])
         .slice()
-        .sort((a, b) => a.className.localeCompare(b.className));
+        .sort((a, b) => dayjs(b.enrolledAt).valueOf() - dayjs(a.enrolledAt).valueOf());
       setClasses(sorted);
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -100,31 +100,17 @@ export default function StudentClassManagement() {
       key: "actions",
       fixed: "right",
       width: 70,
-      render: (_, r) => {
-        const content = (
-          <div className="w-40">
-            <Button
-              type="text"
-              className="w-full flex items-start justify-start gap-2 px-3"
-              onClick={() =>
-                navigate(`/student/classes/${r.classId}`, { state: r })
-              }
-            >
-              <Eye className="w-4 h-4" /> View
-            </Button>
-          </div>
-        );
-        return (
-          <Popover
-            trigger="click"
-            placement="bottomRight"
-            overlayInnerStyle={{ padding: 4 }}
-            content={content}
-          >
-            <Button type="text" icon={<MoreHorizontal className="w-5 h-5" />} />
-          </Popover>
-        );
-      },
+      render: (_, r) => (
+        <Button
+          type="text"
+          icon={<Eye className="w-4 h-4" />}
+          onClick={() =>
+            navigate(`/student/classes/${r.classId}`, { state: r })
+          }
+        >
+          View
+        </Button>
+      ),
     },
   ];
 

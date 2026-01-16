@@ -252,30 +252,24 @@ export default function GroupModals({
           >
             <Input placeholder="Enter project title" />
           </Form.Item>
-          <Form.Item name="description" label="Description">
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: "Enter project description" }]}
+          >
             <Input.TextArea
-              rows={3}
-              placeholder="Enter project description (optional)"
+              rows={4}
+              placeholder="Enter project description, purpose, and details"
             />
           </Form.Item>
           <Form.Item
-            name="purpose"
-            label="Purpose"
-            rules={[{ required: true, message: "Enter project purpose" }]}
+            name="component"
+            label="Component"
+            rules={[{ required: true, message: "Enter component" }]}
           >
             <Input.TextArea
               rows={2}
-              placeholder="What is the purpose of this project?"
-            />
-          </Form.Item>
-          <Form.Item
-            name="expectedTechnology"
-            label="Expected Technology"
-            rules={[{ required: true, message: "Enter expected technology" }]}
-          >
-            <Input.TextArea
-              rows={2}
-              placeholder="What technologies will be used?"
+              placeholder="What components will be used?"
             />
           </Form.Item>
         </Form>
@@ -298,30 +292,24 @@ export default function GroupModals({
           >
             <Input placeholder="Enter project title" />
           </Form.Item>
-          <Form.Item name="description" label="Description">
+          <Form.Item
+            name="description"
+            label="Description"
+            rules={[{ required: true, message: "Enter project description" }]}
+          >
             <Input.TextArea
-              rows={3}
-              placeholder="Enter project description (optional)"
+              rows={4}
+              placeholder="Enter project description, purpose, and details"
             />
           </Form.Item>
           <Form.Item
-            name="purpose"
-            label="Purpose"
-            rules={[{ required: true, message: "Enter project purpose" }]}
+            name="component"
+            label="Component"
+            rules={[{ required: true, message: "Enter component" }]}
           >
             <Input.TextArea
               rows={2}
-              placeholder="What is the purpose of this project?"
-            />
-          </Form.Item>
-          <Form.Item
-            name="expectedTechnology"
-            label="Expected Technology"
-            rules={[{ required: true, message: "Enter expected technology" }]}
-          >
-            <Input.TextArea
-              rows={2}
-              placeholder="What technologies will be used?"
+              placeholder="What components will be used?"
             />
           </Form.Item>
         </Form>

@@ -41,6 +41,8 @@ import {
 } from "../../api/instructor";
 import { getProjectByGroup } from "../../api/project";
 import { updateProjectStatus } from "../../api/project";
+import { getSimulationsByProject } from "../../api/simulation";
+import type { SimulationItem } from "../../api/simulation";
 import type {
   InstructorGroupDetail,
   InstructorGroupMember,
@@ -52,7 +54,6 @@ import type {
   UpdateProjectStatusRequest,
 } from "../../types/project";
 import InstructorMilestones from "../../components/milestone/InstructorMilestones";
-import ProjectGradesCard from "../../components/project/ProjectGradesCard";
 import FinalSubmissionView from "../../components/finalSubmission/FinalSubmissionView";
 import { ProjectStatusHistoryModal } from "../../components/project/ProjectStatusHistory";
 import toast from "react-hot-toast";
@@ -60,25 +61,35 @@ import { getErrorMessage } from "../../utils/helpers";
 import { useAuth } from "../../providers/AuthProvider";
 
 export default function InstructorGroupDetail() {
-  const { classId, groupId } = useParams<{ classId: string; groupId: string }>();
+  const { classId, groupId } = useParams<{
+    classId: string;
+    groupId: string;
+  }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [group, setGroup] = useState<InstructorGroupDetail | null>(null);
   const [projects, setProjects] = useState<ProjectDetail[]>([]);
+  const [simulations, setSimulations] = useState<
+    Record<number, SimulationItem[]>
+  >({});
   const [loading, setLoading] = useState(false);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null
+  );
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>("");
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<UnassignedStudent[]>([]);
   const [searching, setSearching] = useState(false);
-  const [selectedStudents, setSelectedStudents] = useState<UnassignedStudent[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<UnassignedStudent[]>(
+    []
+  );
   const debounceTimer = useRef<number | null>(null);
 
   const [editForm] = Form.useForm<UpdateGroupRequest>();
@@ -91,13 +102,35 @@ export default function InstructorGroupDetail() {
       (async () => {
         try {
           setLoading(true);
-          
+
           const groupData = await getClassGroups(cId);
           const foundGroup = groupData.data?.find((g) => g.groupId === gId);
 
           if (foundGroup) {
             setGroup(foundGroup);
             const projectRes = await getProjectByGroup(gId);
+
+            if (projectRes && projectRes.length > 0) {
+              const simulationsMap: Record<number, SimulationItem[]> = {};
+              for (const project of projectRes) {
+                try {
+                  const simRes = await getSimulationsByProject(
+                    project.projectId
+                  );
+                  if (simRes.data.isSuccess && simRes.data.data) {
+                    simulationsMap[project.projectId] = simRes.data.data.filter(
+                      (sim) => sim.status === "submitted"
+                    );
+                  }
+                } catch (e) {
+                  console.error(
+                    `Failed to fetch simulations for project ${project.projectId}:`,
+                    e
+                  );
+                }
+              }
+              setSimulations(simulationsMap);
+            }
             setProjects(projectRes || []);
           }
         } catch (e) {
@@ -122,13 +155,13 @@ export default function InstructorGroupDetail() {
       setStudents([]);
       return;
     }
-    
+
     try {
       setSearching(true);
       const res = await getUnassignedStudents(parseInt(classId), query);
       const results = res.data?.students || [];
       const filtered = results.filter(
-        s => !selectedStudents.some(sel => sel.userId === s.userId)
+        (s) => !selectedStudents.some((sel) => sel.userId === s.userId)
       );
       setStudents(filtered);
     } catch (e) {
@@ -140,19 +173,19 @@ export default function InstructorGroupDetail() {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    
+
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
-    
+
     debounceTimer.current = setTimeout(() => {
       searchStudents(value);
     }, 300);
   };
 
   const handleSelect = (_value: string, option: any) => {
-    const student = students.find(s => s.userId === option.key);
-    if (student && !selectedStudents.some(s => s.userId === student.userId)) {
+    const student = students.find((s) => s.userId === option.key);
+    if (student && !selectedStudents.some((s) => s.userId === student.userId)) {
       setSelectedStudents([...selectedStudents, student]);
       setSearchQuery("");
       setStudents([]);
@@ -160,7 +193,7 @@ export default function InstructorGroupDetail() {
   };
 
   const handleRemoveStudent = (userId: number) => {
-    setSelectedStudents(selectedStudents.filter(s => s.userId !== userId));
+    setSelectedStudents(selectedStudents.filter((s) => s.userId !== userId));
   };
 
   const handleUpdateGroup = async () => {
@@ -176,7 +209,7 @@ export default function InstructorGroupDetail() {
 
       toast.success("Group updated successfully");
       setEditModalOpen(false);
-      
+
       setGroup({
         ...group,
         groupName: values.groupName || group.groupName,
@@ -193,18 +226,18 @@ export default function InstructorGroupDetail() {
       toast.error("Please select at least one student");
       return;
     }
-    
+
     try {
       let successCount = 0;
       let failCount = 0;
-      
+
       for (const student of selectedStudents) {
         try {
           const res = await addMemberToGroup(parseInt(groupId), {
             userId: student.userId,
             roleInGroup: "Member",
           });
-          
+
           if (res.isSuccess) {
             successCount++;
           } else {
@@ -215,23 +248,29 @@ export default function InstructorGroupDetail() {
           failCount++;
         }
       }
-      
+
       if (successCount > 0) {
-        toast.success(`${successCount} member${successCount > 1 ? 's' : ''} added successfully`);
+        toast.success(
+          `${successCount} member${
+            successCount > 1 ? "s" : ""
+          } added successfully`
+        );
       }
       if (failCount > 0) {
-        toast.error(`${failCount} member${failCount > 1 ? 's' : ''} failed to add`);
+        toast.error(
+          `${failCount} member${failCount > 1 ? "s" : ""} failed to add`
+        );
       }
-      
+
       setAddMemberModalOpen(false);
       setSelectedStudents([]);
       setSearchQuery("");
-      
+
       const cId = parseInt(classId);
       const gId = parseInt(groupId);
       const groupData = await getClassGroups(cId);
       const foundGroup = groupData.data?.find((g) => g.groupId === gId);
-      
+
       if (foundGroup) {
         setGroup(foundGroup);
       }
@@ -251,7 +290,7 @@ export default function InstructorGroupDetail() {
       }
 
       toast.success("Member removed successfully");
-      
+
       setGroup({
         ...group,
         members: group.members.filter((m) => m.userId !== userId),
@@ -275,7 +314,7 @@ export default function InstructorGroupDetail() {
       }
 
       toast.success("Role updated successfully");
-      
+
       setGroup({
         ...group,
         members: group.members.map((m) =>
@@ -303,12 +342,14 @@ export default function InstructorGroupDetail() {
       toast.success("Project status updated successfully");
       setStatusModalOpen(false);
       statusForm.resetFields();
-      
-      setProjects(projects.map(p => 
-        p.projectId === selectedProjectId
-          ? { ...p, status: values.status }
-          : p
-      ));
+
+      setProjects(
+        projects.map((p) =>
+          p.projectId === selectedProjectId
+            ? { ...p, status: values.status }
+            : p
+        )
+      );
       setSelectedProjectId(null);
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -321,7 +362,9 @@ export default function InstructorGroupDetail() {
       key: "member",
       render: (_: any, record: InstructorGroupMember) => (
         <div className="flex items-center gap-3">
-          <Avatar size={40} src={record.avatarUrl}>{record.fullName?.[0]}</Avatar>
+          <Avatar size={40} src={record.avatarUrl}>
+            {record.fullName?.[0]}
+          </Avatar>
           <div>
             <div className="font-medium">{record.fullName}</div>
             <div className="text-xs text-gray-500">{record.email}</div>
@@ -441,7 +484,16 @@ export default function InstructorGroupDetail() {
           </Descriptions.Item>
           <Descriptions.Item label="Created">
             {group?.createdAt
-              ? new Date(group.createdAt).toLocaleDateString()
+              ? new Date(
+                  new Date(group.createdAt).getTime() + 7 * 60 * 60 * 1000
+                ).toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })
               : "—"}
           </Descriptions.Item>
           <Descriptions.Item label="Description" span={3}>
@@ -488,7 +540,9 @@ export default function InstructorGroupDetail() {
                 type="inner"
                 title={
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-base">{project.title}</span>
+                    <span className="font-medium text-base">
+                      {project.title}
+                    </span>
                     <div className="flex items-center gap-2">
                       <Button
                         size="small"
@@ -524,14 +578,9 @@ export default function InstructorGroupDetail() {
                   <Descriptions.Item label="Description" span={2}>
                     {project.description || "—"}
                   </Descriptions.Item>
-                  {project.purpose && (
-                    <Descriptions.Item label="Purpose" span={2}>
-                      {project.purpose}
-                    </Descriptions.Item>
-                  )}
-                  {project.expectedTechnology && (
-                    <Descriptions.Item label="Expected Technology" span={2}>
-                      {project.expectedTechnology}
+                  {project.component && (
+                    <Descriptions.Item label="Component" span={2}>
+                      {project.component}
                     </Descriptions.Item>
                   )}
                   <Descriptions.Item label="Status">
@@ -542,13 +591,32 @@ export default function InstructorGroupDetail() {
                       {project.status.toUpperCase()}
                     </Tag>
                   </Descriptions.Item>
-                 
+
                   <Descriptions.Item label="Created">
-                    {new Date(project.createdAt).toLocaleDateString()}
+                    {new Date(
+                      new Date(project.createdAt).getTime() + 7 * 60 * 60 * 1000
+                    ).toLocaleString("en-GB", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    })}
                   </Descriptions.Item>
                   <Descriptions.Item label="Updated">
                     {project.updatedAt
-                      ? new Date(project.updatedAt).toLocaleDateString()
+                      ? new Date(
+                          new Date(project.updatedAt).getTime() +
+                            7 * 60 * 60 * 1000
+                        ).toLocaleString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })
                       : "—"}
                   </Descriptions.Item>
                 </Descriptions>
@@ -560,14 +628,88 @@ export default function InstructorGroupDetail() {
                 </Divider>
 
                 <InstructorMilestones projectId={project.projectId} />
-                
+
                 <Divider orientation="left" className="mt-6 mb-4">
                   <span className="text-sm font-medium text-gray-600">
-                    Grading Overview
+                    IoT Simulations (Submitted)
                   </span>
                 </Divider>
 
-                <ProjectGradesCard projectId={project.projectId} role="instructor" />
+                {simulations[project.projectId] &&
+                simulations[project.projectId].length > 0 ? (
+                  <div className="space-y-3">
+                    {simulations[project.projectId].map((sim) => (
+                      <Card
+                        key={sim.simulationId}
+                        type="inner"
+                        size="small"
+                        className="hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-semibold text-base">
+                                {sim.title}
+                              </span>
+                              <Tag color="blue">SUBMITTED</Tag>
+                            </div>
+                            <p className="text-gray-600 text-sm mb-2">
+                              {sim.description}
+                            </p>
+                            <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                              <span>
+                                Created:{" "}
+                                {new Date(
+                                  new Date(sim.createdAt).getTime() +
+                                    7 * 60 * 60 * 1000
+                                ).toLocaleString("en-GB", {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: false,
+                                })}
+                              </span>
+                              {sim.updatedAt && (
+                                <span>
+                                  Updated:{" "}
+                                  {new Date(
+                                    new Date(sim.updatedAt).getTime() +
+                                      7 * 60 * 60 * 1000
+                                  ).toLocaleString("en-GB", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => {
+                              navigate(
+                                `/instructor/classes/${classId}/groups/${groupId}/simulation?projectId=${project.projectId}&simulationId=${sim.simulationId}`
+                              );
+                            }}
+                          >
+                            View Simulation
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-400 text-sm">
+                    No submitted simulations yet
+                  </div>
+                )}
 
                 <Divider orientation="left" className="mt-6 mb-4">
                   <span className="text-sm font-medium text-gray-600">
@@ -575,7 +717,21 @@ export default function InstructorGroupDetail() {
                   </span>
                 </Divider>
 
-                <FinalSubmissionView projectId={project.projectId} role="instructor" />
+                <FinalSubmissionView
+                  projectId={project.projectId}
+                  role="instructor"
+                />
+
+                {/* <Divider orientation="left" className="mt-6 mb-4">
+                  <span className="text-sm font-medium text-gray-600">
+                    Grading Overview
+                  </span>
+                </Divider>
+
+                <ProjectGradesCard
+                  projectId={project.projectId}
+                  role="instructor"
+                /> */}
               </Card>
             ))}
           </div>
@@ -654,7 +810,9 @@ export default function InstructorGroupDetail() {
                 searching ? (
                   <div className="text-center py-4">
                     <Spin size="small" />
-                    <div className="text-xs text-gray-500 mt-2">Searching...</div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Searching...
+                    </div>
                   </div>
                 ) : searchQuery.trim() ? (
                   <div className="text-center py-4 text-gray-500 text-sm">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   List,
@@ -40,6 +41,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { useNotificationHub } from "../hooks/useNotificationHub";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -48,6 +50,7 @@ dayjs.extend(timezone);
 const { Title, Text } = Typography;
 
 export default function NotificationsPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [summary, setSummary] = useState<NotificationSummary | null>(null);
@@ -55,11 +58,37 @@ export default function NotificationsPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [pageNumber, setPageNumber] = useState(1);
-  const pageSize = 20;
+  const pageSize = 100;
 
   const listRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useNotificationHub({
+    onNotification: (notification: Notification) => {
+      console.log("[Notifications] New notification received:", notification);
+
+      setNotifications((prev) => {
+        const exists = prev.some(
+          (n) => n.notificationId === notification.notificationId
+        );
+        console.log(
+          `[Notifications] Notification ID ${notification.notificationId} exists: ${exists}`
+        );
+
+        if (exists) {
+          console.log(`[Notifications] Skipping duplicate notification`);
+          return prev;
+        }
+
+        console.log(`[Notifications] Adding new notification to list`);
+        return [notification, ...prev];
+      });
+
+      fetchSummary();
+      toast.success(`New notification: ${notification.title}`);
+    },
+  });
 
   const fetchSummary = async () => {
     try {
@@ -72,7 +101,10 @@ export default function NotificationsPage() {
     }
   };
 
-  const fetchNotifications = async (page: number = 1, append: boolean = false) => {
+  const fetchNotifications = async (
+    page: number = 1,
+    append: boolean = false
+  ) => {
     try {
       if (page === 1) {
         setLoading(true);
@@ -105,7 +137,6 @@ export default function NotificationsPage() {
       setLoadingMore(false);
     }
   };
-
   useEffect(() => {
     fetchSummary();
   }, []);
@@ -165,9 +196,7 @@ export default function NotificationsPage() {
     try {
       const res = await markAllNotificationsAsRead();
       if (res.isSuccess) {
-        setNotifications((prev) =>
-          prev.map((n) => ({ ...n, isRead: true }))
-        );
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
         fetchSummary();
         toast.success("All notifications marked as read");
       }
@@ -230,6 +259,62 @@ export default function NotificationsPage() {
     }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
+      await handleMarkAsRead(notification.notificationId);
+    }
+
+    switch (notification.type.toLowerCase()) {
+      case "project_submitted":
+        navigate("");
+        break;
+      case "graded":
+        navigate("");
+        break;
+      case "grader_assigned":
+      case "grader_removed":
+        navigate("/instructor/grading");
+        break;
+      case "milestone_weight_warning":
+        navigate("");
+        break;
+      case "milestone_deadline_reminder":
+        navigate("");
+        break;
+      case "group_assigned":
+        navigate("");
+        break;
+      case "final_submission":
+        navigate("/instructor/classes");
+        break;
+      case "final_graded":
+      case "group_create":
+      case "project_status":
+        navigate("/student/classes");
+        break;
+      case "leader_assigned":
+        navigate("");
+        break;
+      case "announcement":
+        navigate("");
+        break;
+      case "info":
+        navigate("");
+        break;
+      case "success":
+        navigate("");
+        break;
+      case "warning":
+        navigate("");
+        break;
+      case "error":
+        navigate("");
+        break;
+      default:
+        break;
+    }
+  };
+
   const tabItems: TabsProps["items"] = [
     {
       key: "all",
@@ -256,7 +341,7 @@ export default function NotificationsPage() {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <Title level={2} className="!mb-0">
+        <Title level={2} className="mb-0!">
           <div className="flex items-center gap-3">
             <Bell className="w-8 h-8 text-blue-600" />
             <span>Notifications</span>
@@ -267,7 +352,7 @@ export default function NotificationsPage() {
       {summary && (
         <Row gutter={16}>
           <Col xs={24} sm={8}>
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
+            <Card className="bg-linear-to-br from-blue-50 to-blue-100">
               <Statistic
                 title="Total Notifications"
                 value={summary.totalNotifications}
@@ -277,7 +362,7 @@ export default function NotificationsPage() {
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
+            <Card className="bg-linear-to-br from-orange-50 to-orange-100">
               <Statistic
                 title="Unread"
                 value={summary.unreadCount}
@@ -287,7 +372,7 @@ export default function NotificationsPage() {
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card className="bg-gradient-to-br from-green-50 to-green-100">
+            <Card className="bg-linear-to-br from-green-50 to-green-100">
               <Statistic
                 title="Read"
                 value={summary.readCount}
@@ -347,7 +432,10 @@ export default function NotificationsPage() {
           onChange={(key) => setActiveTab(key as "all" | "unread")}
         />
 
-        <div ref={listRef} style={{ maxHeight: "calc(100vh - 500px)", overflowY: "auto" }}>
+        <div
+          ref={listRef}
+          style={{ maxHeight: "calc(100vh - 500px)", overflowY: "auto" }}
+        >
           {loading ? (
             <div className="text-center py-12">
               <Spin size="large" />
@@ -371,21 +459,28 @@ export default function NotificationsPage() {
                     key={item.notificationId}
                     className={`${
                       !item.isRead ? "bg-blue-50" : "bg-white"
-                    } hover:bg-gray-50 transition-colors`}
+                    } hover:bg-gray-50 transition-colors cursor-pointer`}
+                    onClick={() => handleNotificationClick(item)}
                     actions={[
                       !item.isRead && (
                         <Button
                           type="text"
                           size="small"
                           icon={<CheckCircle className="w-4 h-4" />}
-                          onClick={() => handleMarkAsRead(item.notificationId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkAsRead(item.notificationId);
+                          }}
                         >
                           Mark Read
                         </Button>
                       ),
                       <Popconfirm
                         title="Delete this notification?"
-                        onConfirm={() => handleDelete(item.notificationId)}
+                        onConfirm={(e) => {
+                          e?.stopPropagation();
+                          handleDelete(item.notificationId);
+                        }}
                         okText="Delete"
                         okButtonProps={{ danger: true }}
                       >
@@ -394,6 +489,7 @@ export default function NotificationsPage() {
                           danger
                           size="small"
                           icon={<Trash2 className="w-4 h-4" />}
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Delete
                         </Button>
@@ -419,7 +515,11 @@ export default function NotificationsPage() {
                         <div className="space-y-1">
                           <Text>{item.message}</Text>
                           <div className="text-xs text-gray-500">
-                            {dayjs.utc(item.createdAt).tz("Asia/Ho_Chi_Minh").fromNow()} • from {item.userName}
+                            {dayjs
+                              .utc(item.createdAt)
+                              .tz("Asia/Ho_Chi_Minh")
+                              .fromNow()}{" "}
+                            • from {item.userName}
                           </div>
                         </div>
                       }

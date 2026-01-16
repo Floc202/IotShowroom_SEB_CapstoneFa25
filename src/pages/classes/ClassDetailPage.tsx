@@ -18,6 +18,8 @@ import {
   Space,
   Divider,
   Typography,
+  Upload,
+  Table,
 } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import { getClassDetail } from "../../api/classes";
@@ -33,6 +35,7 @@ import {
   Package,
   UserPlus,
   UserMinus,
+  FileSpreadsheet,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../providers/AuthProvider";
@@ -40,17 +43,19 @@ import {
   addStudentToClass,
   bulkAddStudents,
   removeStudentFromClass,
+  importStudentsToClass,
 } from "../../api/admin";
 import { getUsersByRole } from "../../api/users";
 import { ROLES } from "../../utils/constants";
 import { getErrorMessage } from "../../utils/helpers";
+import type { ImportStudentsResult } from "../../types/admin";
 
 const { Paragraph, Text } = Typography;
 
 const PRIMARY_COLOR = "blue";
 const ICON_SIZE = 18;
 
-type AddMode = "select" | "auto";
+type AddMode = "select" | "auto" | "import";
 
 type UserItem = {
   userId: number | string;
@@ -78,6 +83,9 @@ export default function ClassDetailPage() {
   const [autoMaxMembers, setAutoMaxMembers] = useState<number>(0);
   const [submittingAdd, setSubmittingAdd] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [fileList, setFileList] = useState<any[]>([]);
+  const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null);
+  const [showImportResult, setShowImportResult] = useState(false);
 
   const fetchDetail = async () => {
     if (!id) return;
@@ -156,6 +164,9 @@ export default function ClassDetailPage() {
     setSelectedStudentId(null);
     setAutoMaxMembers(0);
     setAddMode("select");
+    setFileList([]);
+    setImportResult(null);
+    setShowImportResult(false);
     setAddModalOpen(true);
   };
 
@@ -163,6 +174,42 @@ export default function ClassDetailPage() {
     if (!detail || !id) return;
     setSubmittingAdd(true);
     try {
+      if (addMode === "import") {
+        if (fileList.length === 0) {
+          toast.error("Please select an Excel file");
+          return;
+        }
+      
+        const file = fileList[0].originFileObj;
+          console.log("file: ", file)
+        const res = await importStudentsToClass(Number(id), file);
+        
+        if (!res.isSuccess || !res.data) {
+          toast.error(res.message || "Import failed");
+          return;
+        }
+
+        setImportResult(res.data);
+        setShowImportResult(true);
+        
+        if (res.data.successCount > 0) {
+          toast.success(`Successfully imported ${res.data.successCount} students`);
+          await fetchDetail();
+        }
+        
+        if (res.data.failedCount > 0) {
+          toast(`${res.data.failedCount} students failed to import`, {
+            icon: '⚠️',
+            style: {
+              background: '#FFA500',
+              color: '#fff',
+            },
+          });
+        }
+        
+        return;
+      }
+
       if (addMode === "select") {
         if (!selectedStudentId) {
           toast.error("Please select a student to add.");
@@ -517,78 +564,251 @@ export default function ClassDetailPage() {
           </div>
         }
         open={addModalOpen}
-        onCancel={() => setAddModalOpen(false)}
+        onCancel={() => {
+          setAddModalOpen(false);
+          setShowImportResult(false);
+        }}
         onOk={handleAddStudent}
-        okText={addMode === "select" ? "Add Student" : "Auto Fill"}
+        okText={addMode === "select" ? "Add Student" : addMode === "auto" ? "Auto Fill" : "Import"}
         confirmLoading={submittingAdd}
         destroyOnClose
+        width={showImportResult ? 900 : 600}
+        style={{top: 20}}
       >
-        <div className="space-y-3">
-          <Radio.Group
-            value={addMode}
-            onChange={(e) => setAddMode(e.target.value)}
-            className="w-full"
-          >
-            <Space direction="vertical" className="w-full">
-              <Radio value="select">
-                <div className="flex flex-col">
-                  <Text strong>Add Specific Member</Text>
-                  <Paragraph type="secondary" className="mb-1">
-                    Select a specific student to add to the current class.
-                  </Paragraph>
+        {showImportResult && importResult ? (
+          <div className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-800 mb-2">Import Summary</h4>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Total Rows:</span>
+                  <span className="ml-2 font-semibold">{importResult.totalRows}</span>
                 </div>
-              </Radio>
-              <Radio value="auto">
-                <div className="flex flex-col">
-                  <Text strong>Auto Fill to Capacity</Text>
-                  <Paragraph type="secondary" className="mb-1">
-                    The system will automatically add students to the class
-                    until the maximum number you set below is reached.
-                  </Paragraph>
+                <div>
+                  <span className="text-gray-600">Success:</span>
+                  <span className="ml-2 font-semibold text-green-600">{importResult.successCount}</span>
                 </div>
-              </Radio>
-            </Space>
-          </Radio.Group>
-
-          <Divider className="my-2" />
-
-          {addMode === "select" ? (
-            <div className="space-y-1">
-              <Text>Select Student</Text>
-              <Select
-                showSearch
-                placeholder="Search by name or email"
-                optionFilterProp="label"
-                loading={loadingUsers}
-                value={selectedStudentId ?? undefined}
-                onChange={(val) => setSelectedStudentId(val)}
-                className="w-full"
-                options={(studentsPool ?? []).map((u) => ({
-                  value: u.userId,
-                  label: `${u.fullName} — ${u.email}`,
-                }))}
-                notFoundContent={loadingUsers ? "Loading..." : "No data"}
-              />
+                <div>
+                  <span className="text-gray-600">Failed:</span>
+                  <span className="ml-2 font-semibold text-red-600">{importResult.failedCount}</span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-1">
-              <Text>Maximum Capacity to Reach</Text>
-              <InputNumber
-                className="w-full"
-                min={1}
-                value={autoMaxMembers}
-                onChange={(v) => setAutoMaxMembers(Number(v || 0))}
-                placeholder="Enter maximum class capacity (e.g., 30)"
-              />
-              <Paragraph type="secondary" className="mt-1">
-                The system will automatically add new students (not already in
-                class) until the class reaches{" "}
-                <Text strong>{autoMaxMembers || 0}</Text> members (or until no
-                more eligible candidates are available).
-              </Paragraph>
+
+            {importResult.successfulStudents.length > 0 && (
+              <div>
+                <h4 className="font-medium text-green-700 mb-2">Successful Imports</h4>
+                <Table
+                  dataSource={importResult.successfulStudents}
+                  rowKey="rowNumber"
+                  size="small"
+                  pagination={false}
+                  scroll={{ y: 200 }}
+                  columns={[
+                    {
+                      title: "Row",
+                      dataIndex: "rowNumber",
+                      key: "rowNumber",
+                      width: 60,
+                    },
+                    {
+                      title: "Email",
+                      dataIndex: "email",
+                      key: "email",
+                    },
+                    {
+                      title: "Student Name",
+                      dataIndex: "studentName",
+                      key: "studentName",
+                    },
+                    {
+                      title: "Status",
+                      key: "status",
+                      width: 100,
+                      render: () => <Tag color="green">Passed</Tag>,
+                    },
+                  ]}
+                />
+              </div>
+            )}
+
+            {importResult.failedStudents.length > 0 && (
+              <div>
+                <h4 className="font-medium text-red-700 mb-2">Failed Imports</h4>
+                <Table
+                  dataSource={importResult.failedStudents}
+                  rowKey="rowNumber"
+                  size="small"
+                  pagination={false}
+                  scroll={{ y: 200 }}
+                  columns={[
+                    {
+                      title: "Row",
+                      dataIndex: "rowNumber",
+                      key: "rowNumber",
+                      width: 60,
+                    },
+                    {
+                      title: "Email",
+                      dataIndex: "email",
+                      key: "email",
+                    },
+                    {
+                      title: "Status",
+                      dataIndex: "status",
+                      key: "status",
+                      width: 120,
+                      render: (status) => <Tag color="red">{status}</Tag>,
+                    },
+                    {
+                      title: "Reason",
+                      dataIndex: "reason",
+                      key: "reason",
+                    },
+                  ]}
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button type="primary" onClick={() => {
+                setAddModalOpen(false);
+                setShowImportResult(false);
+              }}>
+                Close
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <Radio.Group
+              value={addMode}
+              onChange={(e) => setAddMode(e.target.value)}
+              className="w-full"
+            >
+              <Space direction="vertical" className="w-full">
+                <Radio value="select">
+                  <div className="flex flex-col">
+                    <Text strong>Add Specific Member</Text>
+                    <Paragraph type="secondary" className="mb-1">
+                      Select a specific student to add to the current class.
+                    </Paragraph>
+                  </div>
+                </Radio>
+                <Radio value="auto">
+                  <div className="flex flex-col">
+                    <Text strong>Auto Fill to Capacity</Text>
+                    <Paragraph type="secondary" className="mb-1">
+                      The system will automatically add students to the class
+                      until the maximum number you set below is reached.
+                    </Paragraph>
+                  </div>
+                </Radio>
+                <Radio value="import">
+                  <div className="flex flex-col">
+                    <Text strong>Import from Excel</Text>
+                    <Paragraph type="secondary" className="mb-1">
+                      Upload an Excel file containing student email addresses to import multiple students at once.
+                    </Paragraph>
+                  </div>
+                </Radio>
+              </Space>
+            </Radio.Group>
+
+            <Divider className="my-2" />
+
+            {addMode === "select" ? (
+              <div className="space-y-1">
+                <Text>Select Student</Text>
+                <Select
+                  showSearch
+                  placeholder="Search by name or email"
+                  optionFilterProp="label"
+                  loading={loadingUsers}
+                  value={selectedStudentId ?? undefined}
+                  onChange={(val) => setSelectedStudentId(val)}
+                  className="w-full"
+                  options={(studentsPool ?? []).map((u) => ({
+                    value: u.userId,
+                    label: `${u.fullName} — ${u.email}`,
+                  }))}
+                  notFoundContent={loadingUsers ? "Loading..." : "No data"}
+                />
+              </div>
+            ) : addMode === "auto" ? (
+              <div className="space-y-1">
+                <Text>Maximum Capacity to Reach</Text>
+                <InputNumber
+                  className="w-full"
+                  min={1}
+                  value={autoMaxMembers}
+                  onChange={(v) => setAutoMaxMembers(Number(v || 0))}
+                  placeholder="Enter maximum class capacity (e.g., 30)"
+                />
+                <Paragraph type="secondary" className="mt-1">
+                  The system will automatically add new students (not already in
+                  class) until the class reaches{" "}
+                  <Text strong>{autoMaxMembers || 0}</Text> members (or until no
+                  more eligible candidates are available).
+                </Paragraph>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-800 mb-3">Excel Format Required:</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Email</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="bg-white">
+                          <td className="border border-gray-300 px-3 py-2">student@fpt.edu.vn</td>
+                        </tr>
+                        <tr className="bg-gray-50">
+                          <td className="border border-gray-300 px-3 py-2">student@example.com</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-3">
+                    <strong>Note:</strong> The Excel file must contain an "Email" column with student email addresses. Only existing students in the system can be added.
+                  </p>
+                </div>
+
+                <Upload.Dragger
+                  fileList={fileList}
+                  beforeUpload={(file: File) => {
+                    const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                                   file.type === 'application/vnd.ms-excel';
+                    if (!isExcel) {
+                      toast.error('You can only upload Excel files!');
+                      return false;
+                    }
+                    setFileList([{ ...file, uid: file.name, name: file.name, originFileObj: file }]);
+                    return false;
+                  }}
+                  onRemove={() => {
+                    setFileList([]);
+                  }}
+                  maxCount={1}
+                >
+                  <p className="ant-upload-drag-icon">
+                    <FileSpreadsheet size={48} className="mx-auto text-gray-400" />
+                  </p>
+                  <p className="ant-upload-text">
+                    Click or drag Excel file to this area to upload
+                  </p>
+                  <p className="ant-upload-hint">
+                    Support for single Excel file upload only (.xlsx or .xls)
+                  </p>
+                </Upload.Dragger>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

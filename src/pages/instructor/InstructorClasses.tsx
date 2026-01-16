@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, Tag, Empty, Input, Button, Row, Col } from "antd";
-import { GraduationCap, Search, Eye, Users, FolderKanban, Calendar } from "lucide-react";
-import { getInstructorClasses } from "../../api/instructor";
-import type { InstructorClassItem } from "../../types/instructor";
+import { Card, Tag, Empty, Input, Button, Row, Col, Select, Table, Space, Modal } from "antd";
+import { GraduationCap, Search, Eye, Users, FolderKanban, Calendar, Download, FileSpreadsheet } from "lucide-react";
+import { getInstructorClasses, getClassGrades, exportClassGrades } from "../../api/instructor";
+import type { InstructorClassItem, ClassGrades } from "../../types/instructor";
 import toast from "react-hot-toast";
-import { getErrorMessage } from "../../utils/helpers";
+import { getErrorMessage, formatVietnamTime } from "../../utils/helpers";
 
 export default function InstructorClasses() {
   const navigate = useNavigate();
@@ -13,6 +13,11 @@ export default function InstructorClasses() {
   const [filteredClasses, setFilteredClasses] = useState<InstructorClassItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
+  const [gradesData, setGradesData] = useState<ClassGrades | null>(null);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [gradesModalOpen, setGradesModalOpen] = useState(false);
 
   const fetchClasses = async () => {
     try {
@@ -43,6 +48,131 @@ export default function InstructorClasses() {
     setFilteredClasses(filtered);
   }, [searchText, classes]);
 
+  const handleFetchGrades = async () => {
+    if (!selectedClassId) {
+      toast.error("Please select a class first");
+      return;
+    }
+    try {
+      setLoadingGrades(true);
+      const res = await getClassGrades(selectedClassId);
+      if (res.isSuccess && res.data) {
+        setGradesData(res.data);
+        setGradesModalOpen(true);
+        toast.success("Grades retrieved successfully");
+      } else {
+        toast.error(res.message || "Failed to retrieve grades");
+      }
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setLoadingGrades(false);
+    }
+  };
+
+  const handleExportGrades = async () => {
+    if (!selectedClassId) {
+      toast.error("Please select a class first");
+      return;
+    }
+    try {
+      setExporting(true);
+      const { blob, headers } = await exportClassGrades(selectedClassId, true, false);
+      
+      const contentDisposition = headers["content-disposition"] || headers["Content-Disposition"] || "";
+      let fileName = "";
+      
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = fileNameMatch[1].replace(/['"]/g, "");
+          if (fileName.startsWith("UTF-8''")) {
+            fileName = decodeURIComponent(fileName.substring(7));
+          }
+        }
+      }
+      
+      if (!fileName) {
+        const selectedClass = classes.find(c => c.classId === selectedClassId);
+        fileName = selectedClass 
+          ? `ClassGrades_${selectedClass.className}_${new Date().toISOString().split('T')[0]}.xlsx`
+          : `ClassGrades_${selectedClassId}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Excel file exported successfully");
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const gradeColumns = [
+    {
+      title: "Student Name",
+      dataIndex: "studentName",
+      key: "studentName",
+      width: 150,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      width: 200,
+    },
+    {
+      title: "Group Name",
+      dataIndex: "groupName",
+      key: "groupName",
+      width: 150,
+      render: (text: string | null) => text || "-",
+    },
+    {
+      title: "Project Title",
+      dataIndex: "projectTitle",
+      key: "projectTitle",
+      width: 200,
+      render: (text: string | null) => text || "-",
+    },
+    ...(gradesData?.milestoneNames.map((milestone) => ({
+      title: milestone,
+      key: milestone,
+      dataIndex: ["milestoneGrades", milestone],
+      width: 120,
+      render: (value: number | null) => value !== null ? value.toFixed(2) : "-",
+    })) || []),
+    {
+      title: "Overall Grade",
+      dataIndex: "overallGrade",
+      key: "overallGrade",
+      width: 100,
+      render: (value: number | null) => value !== null ? value.toFixed(2) : "-",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      width: 120,
+      render: (status: string) => {
+        const colorMap: Record<string, string> = {
+          "Approved": "green",
+          "No Project": "default",
+          "Pending": "orange",
+        };
+        return <Tag color={colorMap[status] || "default"}>{status}</Tag>;
+      },
+    },
+  ];
+
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div>
@@ -52,6 +182,100 @@ export default function InstructorClasses() {
         </h1>
         <p className="text-gray-600">Manage your assigned classes</p>
       </div>
+
+      <Card title="Grade Management" className="mb-6">
+        <Space size="middle" wrap>
+          <Select
+            placeholder="Select a class"
+            style={{ width: 300 }}
+            value={selectedClassId}
+            onChange={setSelectedClassId}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+            }
+            options={classes.map((cls) => ({
+              value: cls.classId,
+              label: `${cls.className} - ${cls.semesterName}`,
+            }))}
+          />
+          <Button
+            type="primary"
+            icon={<FileSpreadsheet className="w-4 h-4" />}
+            onClick={handleFetchGrades}
+            loading={loadingGrades}
+            disabled={!selectedClassId}
+          >
+            Get Grades
+          </Button>
+          <Button
+            type="default"
+            icon={<Download className="w-4 h-4" />}
+            onClick={handleExportGrades}
+            loading={exporting}
+            disabled={!selectedClassId || !gradesData}
+          >
+            Export Excel
+          </Button>
+        </Space>
+      </Card>
+
+      <Modal
+        title="Class Grades"
+        open={gradesModalOpen}
+        onCancel={() => setGradesModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setGradesModalOpen(false)}>
+            Close
+          </Button>,
+          <Button
+            key="export"
+            type="primary"
+            icon={<Download className="w-4 h-4" />}
+            onClick={handleExportGrades}
+            loading={exporting}
+            disabled={!gradesData}
+          >
+            Export Excel
+          </Button>,
+        ]}
+        width="90%"
+        style={{ top: 20 }}
+      >
+        {gradesData && (
+          <div>
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <Row gutter={16}>
+                <Col span={6}>
+                  <div className="text-sm text-gray-600">Class Name</div>
+                  <div className="font-semibold">{gradesData.className}</div>
+                </Col>
+                <Col span={6}>
+                  <div className="text-sm text-gray-600">Semester</div>
+                  <div className="font-semibold">{gradesData.semesterName}</div>
+                </Col>
+                <Col span={6}>
+                  <div className="text-sm text-gray-600">Total Students</div>
+                  <div className="font-semibold">{gradesData.totalStudents}</div>
+                </Col>
+                <Col span={6}>
+                  <div className="text-sm text-gray-600">Total Groups</div>
+                  <div className="font-semibold">{gradesData.totalGroups}</div>
+                </Col>
+              </Row>
+            </div>
+            <Table
+              columns={gradeColumns}
+              dataSource={gradesData.studentGrades.map((grade, index) => ({
+                ...grade,
+                key: grade.studentId || index,
+              }))}
+              pagination={{ pageSize: 10 }}
+              scroll={{ x: "max-content" }}
+            />
+          </div>
+        )}
+      </Modal>
 
       <Card>
         <div className="mb-4">
@@ -130,7 +354,7 @@ export default function InstructorClasses() {
                     </div>
 
                     <div className="text-xs text-gray-400 pt-2 border-t">
-                      Created: {new Date(cls.createdAt).toLocaleDateString()}
+                      Created: {formatVietnamTime(cls.createdAt, "DD/MM/YYYY")}
                     </div>
                   </div>
                 </Card>

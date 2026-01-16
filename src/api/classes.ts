@@ -6,6 +6,8 @@ import type {
   CreateClassRequest,
   UpdateClassRequest,
   AssignInstructorRequest,
+  ChangeClassStatusRequest,
+  ChangeClassStatusResponse,
 } from "../types/classes";
 
 const BASE = "/Classes";
@@ -46,4 +48,12 @@ export const assignInstructor = (
 ) =>
   api
     .put<ApiEnvelope<ClassItem>>(`${BASE}/${classId}/instructor`, payload)
+    .then((r) => r.data);
+
+export const changeClassStatus = (
+  classId: Id,
+  payload: ChangeClassStatusRequest
+) =>
+  api
+    .put<ApiEnvelope<ChangeClassStatusResponse>>(`${BASE}/${classId}/change-status`, payload)
     .then((r) => r.data);

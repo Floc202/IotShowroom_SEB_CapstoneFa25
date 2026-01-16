@@ -13,6 +13,11 @@ import type {
   ClassConfig,
   UpdateClassConfigRequest,
   FinalGradeRequest,
+  CreateProjectTemplateRequest,
+  UpdateProjectTemplateRequest,
+  ProjectTemplate,
+  TemplateRegistration,
+  TemplateStatistics,
 } from "../types/instructor";
 
 const BASE = "/Instructor";
@@ -87,5 +92,89 @@ export const getUnassignedStudents = (classId: Id, query?: string) =>
     .get<ApiEnvelope<import("../types/instructor").UnassignedStudentsResponse>>(
       `${BASE}/classes/${classId}/unassigned-students`,
       { params: query ? { q: query } : undefined }
+    )
+    .then((r) => r.data);
+
+export const getClassStudentsWithGroups = (classId: Id) =>
+  api
+    .get<ApiEnvelope<import("../types/instructor").StudentsWithGroupsResponse>>(
+      `${BASE}/classes/${classId}/students-with-groups`
+    )
+    .then((r) => r.data);
+
+export const getMilestoneWarnings = (classId: Id) =>
+  api
+    .get<ApiEnvelope<import("../types/instructor").ProjectMilestoneWarning[]>>(
+      `${BASE}/classes/${classId}/milestone-warnings`
+    )
+    .then((r) => r.data);
+
+export const getClassGrades = (classId: Id) =>
+  api
+    .get<ApiEnvelope<import("../types/instructor").ClassGrades>>(
+      `${BASE}/classes/${classId}/grades`
+    )
+    .then((r) => r.data);
+
+export const exportClassGrades = async (
+  classId: Id,
+  includeMilestoneDetails: boolean = true,
+  includeFeedback: boolean = false
+) => {
+  const response = await api.get(
+    `${BASE}/classes/${classId}/grades/export`,
+    {
+      params: {
+        includeMilestoneDetails,
+        includeFeedback,
+      },
+      responseType: "blob",
+    }
+  );
+  return {
+    blob: response.data,
+    headers: response.headers,
+  };
+};
+
+export const createProjectTemplate = (payload: CreateProjectTemplateRequest) =>
+  api
+    .post<ApiEnvelope<ProjectTemplate>>(`${BASE}/templates`, payload)
+    .then((r) => r.data);
+
+export const getClassTemplates = (classId: Id) =>
+  api
+    .get<ApiEnvelope<ProjectTemplate[]>>(`${BASE}/classes/${classId}/templates`)
+    .then((r) => r.data);
+
+export const getTemplateDetail = (templateId: Id) =>
+  api
+    .get<ApiEnvelope<ProjectTemplate>>(`${BASE}/templates/${templateId}`)
+    .then((r) => r.data);
+
+export const updateProjectTemplate = (templateId: Id, payload: UpdateProjectTemplateRequest) =>
+  api
+    .put<ApiEnvelope<boolean>>(`${BASE}/templates/${templateId}`, payload)
+    .then((r) => r.data);
+
+export const deleteProjectTemplate = (templateId: Id) =>
+  api
+    .delete<ApiEnvelope<boolean>>(`${BASE}/templates/${templateId}`)
+    .then((r) => r.data);
+
+export const getTemplateRegistrations = (templateId: Id) =>
+  api
+    .get<ApiEnvelope<TemplateRegistration[]>>(`${BASE}/templates/${templateId}/registrations`)
+    .then((r) => r.data);
+
+export const getTemplateStatistics = (templateId: Id) =>
+  api
+    .get<ApiEnvelope<TemplateStatistics>>(`${BASE}/templates/${templateId}/statistics`)
+    .then((r) => r.data);
+
+export const createRandomGroups = (classId: Id) =>
+  api
+    .post<ApiEnvelope<import("../types/instructor").RandomGroupCreationResult>>(
+      `${BASE}/classes/${classId}/create-random-groups`
     )
     .then((r) => r.data);

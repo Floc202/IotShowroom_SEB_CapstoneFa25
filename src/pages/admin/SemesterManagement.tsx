@@ -9,13 +9,13 @@ import {
   Input,
   Select,
   DatePicker,
-  Switch,
   Row,
   Col,
   InputNumber,
   Popover,
   Popconfirm,
   Tooltip,
+  Switch,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs, { Dayjs } from "dayjs";
@@ -54,7 +54,21 @@ const termOptions = [
   { label: "Summer (SU)", value: "SU" },
 ];
 
+const termFullNames: Record<string, string> = {
+  FA: "Fall",
+  SP: "Spring",
+  SU: "Summer",
+};
+
+const termPriority: Record<string, number> = {
+  FA: 1,
+  SU: 2,
+  SP: 3,
+};
+
 const toISO = (d: Dayjs) => d.format("YYYY-MM-DD");
+
+const currentYear = dayjs().year();
 
 export default function SemesterManagement() {
   const [form] = Form.useForm<FormValues>();
@@ -70,6 +84,33 @@ export default function SemesterManagement() {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailSemester, setDetailSemester] = useState<Semester | null>(null);
+
+  const getDisabledDate = (current: Dayjs) => {
+    const selectedYear = form.getFieldValue('year');
+    
+    if (!selectedYear) {
+      return current && current.isBefore(dayjs().startOf('day'));
+    }
+
+    if (selectedYear > currentYear) {
+      return current && current.isBefore(dayjs(`${selectedYear}-01-01`).startOf('day'));
+    }
+
+    return current && current.isBefore(dayjs().startOf('day'));
+  };
+
+  const generateCodeAndName = () => {
+    const year = form.getFieldValue('year');
+    const term = form.getFieldValue('term');
+
+    if (year && term) {
+      const yearShort = year.toString().slice(-2);
+      const code = `${term}${yearShort}`;
+      const name = `${termFullNames[term]} ${year}`;
+      
+      form.setFieldsValue({ code, name });
+    }
+  };
 
   const openDetail = (record: Semester) => {
     setDetailSemester(record);
@@ -87,15 +128,45 @@ export default function SemesterManagement() {
       setLoading(true);
       if (yearFilter) {
         const res = await getSemestersByYear(yearFilter);
-        setData(res.data || []);
+        const sorted = (res.data || [])
+          .slice()
+          .sort((a, b) => {
+            if (a.isActive !== b.isActive) {
+              return a.isActive ? -1 : 1;
+            }
+            
+            const codeYearA = parseInt(a.code.slice(-2), 10);
+            const codeYearB = parseInt(b.code.slice(-2), 10);
+            
+            if (codeYearB !== codeYearA) {
+              return codeYearB - codeYearA;
+            }
+            
+            const codeTermA = a.code.slice(0, 2).toUpperCase();
+            const codeTermB = b.code.slice(0, 2).toUpperCase();
+            return (termPriority[codeTermA] || 999) - (termPriority[codeTermB] || 999);
+          });
+        setData(sorted);
       } else {
         const res = await listSemesters();
         const sorted = (res.data || [])
           .slice()
-          .sort(
-            (a, b) =>
-              dayjs(b.startDate).valueOf() - dayjs(a.startDate).valueOf()
-          );
+          .sort((a, b) => {
+            if (a.isActive !== b.isActive) {
+              return a.isActive ? -1 : 1;
+            }
+            
+            const codeYearA = parseInt(a.code.slice(-2), 10);
+            const codeYearB = parseInt(b.code.slice(-2), 10);
+            
+            if (codeYearB !== codeYearA) {
+              return codeYearB - codeYearA;
+            }
+            
+            const codeTermA = a.code.slice(0, 2).toUpperCase();
+            const codeTermB = b.code.slice(0, 2).toUpperCase();
+            return (termPriority[codeTermA] || 999) - (termPriority[codeTermB] || 999);
+          });
         setData(sorted);
       }
     } catch (e: any) {
@@ -165,7 +236,6 @@ export default function SemesterManagement() {
         if (!res.isSuccess) return toast.error(res.message || "Update failed");
         const updated = res.data;
         
-        // Nếu semester này được set active, thì set tất cả các semester khác thành inactive
         if (values.isActive) {
           setData((prev) =>
             prev.map((s) => 
@@ -188,12 +258,11 @@ export default function SemesterManagement() {
           term: values.term,
           startDate: toISO(start),
           endDate: toISO(end),
-          isActive: values.isActive,
+          // isActive: values.isActive,
         };
         const res = await createSemester(payload);
         if (!res.isSuccess) return toast.error(res.message || "Create failed");
         
-        // Nếu semester mới được tạo với active, set tất cả các semester khác thành inactive
         if (values.isActive) {
           setData((prev) => [res.data, ...prev.map(s => ({ ...s, isActive: false }))]);
         } else {
@@ -301,14 +370,12 @@ export default function SemesterManagement() {
       title: "Year",
       dataIndex: "year",
       key: "year",
-      width: 110,
       sorter: (a, b) => a.year - b.year,
     },
     {
       title: "Term",
       dataIndex: "term",
       key: "term",
-      width: 110,
       render: (t: string) => (
         <Tag color={t === "FA" ? "orange" : t === "SP" ? "green" : "purple"}>
           {t}
@@ -325,7 +392,6 @@ export default function SemesterManagement() {
       title: "Start",
       dataIndex: "startDate",
       key: "startDate",
-      width: 140,
       render: (d: string) => (
         <Tooltip title={dayjs(d).format("dddd, MMM DD YYYY")}>
           {dayjs(d).format("YYYY-MM-DD")}
@@ -338,7 +404,6 @@ export default function SemesterManagement() {
       title: "End",
       dataIndex: "endDate",
       key: "endDate",
-      width: 140,
       render: (d: string) => (
         <Tooltip title={dayjs(d).format("dddd, MMM DD YYYY")}>
           {dayjs(d).format("YYYY-MM-DD")}
@@ -426,35 +491,32 @@ export default function SemesterManagement() {
         destroyOnClose
       >
         <Form<FormValues> form={form} layout="vertical" preserve>
-          {!editing && (
-            <Form.Item
-              name="code"
-              label="Code"
-              rules={[
-                { required: true, message: "Please input code" },
-                { max: 10, message: "Max 10 characters" },
-              ]}
-            >
-              <Input placeholder="FA25 / SP26 / SU25 ..." />
-            </Form.Item>
-          )}
-
-          <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: "Please input semester name" }]}
-          >
-            <Input placeholder="Fall 2025" />
-          </Form.Item>
-
           <Row gutter={12}>
             <Col span={12}>
               <Form.Item
                 name="year"
                 label="Year"
-                rules={[{ required: true, message: "Please input year" }]}
+                rules={[
+                  { required: true, message: "Please input year" },
+                  {
+                    validator: (_, value) => {
+                      if (value && value < currentYear) {
+                        return Promise.reject(new Error(`Year must be ${currentYear} or later`));
+                      }
+                      return Promise.resolve();
+                    }
+                  }
+                ]}
               >
-                <InputNumber className="w-full" min={1900} max={2100} />
+                <InputNumber 
+                  className="w-full" 
+                  min={currentYear} 
+                  max={2100}
+                  onChange={() => {
+                    form.setFieldsValue({ range: undefined });
+                    generateCodeAndName();
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -463,27 +525,58 @@ export default function SemesterManagement() {
                 label="Term"
                 rules={[{ required: true, message: "Please select term" }]}
               >
-                <Select options={termOptions} placeholder="Select term" />
+                <Select 
+                  options={termOptions} 
+                  placeholder="Select term"
+                  onChange={generateCodeAndName}
+                />
               </Form.Item>
             </Col>
           </Row>
+
+          {!editing && (
+            <Form.Item
+              name="code"
+              label="Code"
+            >
+              <Input placeholder="Auto-generated from Year and Term" />
+            </Form.Item>
+          )}
+
+          <Form.Item
+            name="name"
+            label="Name"
+          >
+            <Input placeholder="Auto-generated from Year and Term" />
+          </Form.Item>
 
           <Form.Item
             name="range"
             label="Start / End"
             rules={[{ required: true, message: "Please select date range" }]}
           >
-            <DatePicker.RangePicker className="w-full" />
+            <DatePicker.RangePicker 
+              className="w-full" 
+              disabledDate={getDisabledDate}
+            />
           </Form.Item>
 
-          <Form.Item
-            name="isActive"
-            label="Active"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch />
-          </Form.Item>
+          {editing && (
+            <Form.Item
+              name="isActive"
+              label="Status"
+              valuePropName="checked"
+            >
+              <Switch
+                checkedChildren="Active"
+                unCheckedChildren="Inactive"
+                onChange={(checked) => {
+                  form.setFieldsValue({ isActive: checked });
+                }}
+              />
+            </Form.Item>
+          )}
+
         </Form>
       </Modal>
 

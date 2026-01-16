@@ -7,6 +7,10 @@ import type {
   GroupInvitationList,
   RejectGroupInvitationRequest,
   StudentProjectGrades,
+  SubmissionValidation,
+  EditPeriodValidation,
+  StudentCourseHistory,
+  ProjectGradersInfo,
 } from "../types/student";
 
 const BASE = "/student";
@@ -41,4 +45,24 @@ export const rejectGroupInvitation = (payload: RejectGroupInvitationRequest) =>
 export const getStudentProjectGrades = (projectId: Id) =>
   api
     .get<ApiEnvelope<StudentProjectGrades>>(`${BASE}/projects/${projectId}/grades`)
+    .then((r) => r.data);
+
+export const validateSubmission = (classId: Id) =>
+  api
+    .get<ApiEnvelope<SubmissionValidation>>(`${BASE}/classes/${classId}/validate-submission`)
+    .then((r) => r.data);
+
+export const validateEditPeriod = (classId: Id) =>
+  api
+    .get<ApiEnvelope<EditPeriodValidation>>(`${BASE}/classes/${classId}/validate-edit-window`)
+    .then((r) => r.data);
+
+export const getStudentCourseHistoryAll = (studentId: Id) =>
+  api
+    .get<ApiEnvelope<StudentCourseHistory[]>>(`/StudentCourseHistory/student/${studentId}/all`)
+    .then((r) => r.data);
+
+export const getProjectGraders = (projectId: Id) =>
+  api
+    .get<ApiEnvelope<ProjectGradersInfo>>(`${BASE}/projects/${projectId}/graders`)
     .then((r) => r.data);

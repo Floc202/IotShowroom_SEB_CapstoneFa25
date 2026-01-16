@@ -9,15 +9,17 @@ import {
   Input,
   Upload,
   Dropdown,
+  Popconfirm,
   type MenuProps,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { FileText, Eye, MoreHorizontal, UploadCloud } from "lucide-react";
+import { FileText, Eye, MoreHorizontal, UploadCloud, Trash2 } from "lucide-react";
 import { getMilestones } from "../../api/milestone";
 import {
   submitMilestone,
   getSubmissionHistory,
   uploadSubmissionFile,
+  deleteSubmissionFile,
 } from "../../api/submission";
 import type { Milestone } from "../../types/milestone";
 import type {
@@ -48,6 +50,7 @@ export default function StudentMilestones({
     useState<SubmissionHistory | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [fileList, setFileList] = useState<any[]>([]);
+  const [uploadFileList, setUploadFileList] = useState<any[]>([]);
 
   const [submitForm] =
     Form.useForm<Omit<CreateSubmissionRequest, "projectId" | "milestoneId">>();
@@ -142,6 +145,72 @@ export default function StudentMilestones({
       }
 
       setViewModalOpen(true);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: number) => {
+    if (!selectedMilestone) return;
+
+    try {
+      setActionLoading(true);
+      const res = await deleteSubmissionFile(fileId);
+      
+      if (res.isSuccess) {
+        toast.success("File deleted successfully");
+        const historyRes = await getSubmissionHistory(
+          projectId,
+          selectedMilestone.milestoneId
+        );
+        if (historyRes.isSuccess && historyRes.data) {
+          setSubmissionHistory(historyRes.data);
+        }
+      } else {
+        toast.error(res.message || "Failed to delete file");
+      }
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUploadAdditionalFiles = async (submissionId: number) => {
+    if (uploadFileList.length === 0) {
+      toast.error("Please select at least one file to upload");
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      
+      const uploadPromises = uploadFileList.map((fileItem) =>
+        uploadSubmissionFile(submissionId, fileItem.originFileObj)
+      );
+
+      const uploadResults = await Promise.allSettled(uploadPromises);
+      const failedUploads = uploadResults.filter((r) => r.status === "rejected");
+
+      if (failedUploads.length > 0) {
+        toast.error(`${failedUploads.length} file(s) failed to upload`);
+      } else {
+        toast.success(`${uploadFileList.length} file(s) uploaded successfully`);
+      }
+
+      if (selectedMilestone) {
+        const historyRes = await getSubmissionHistory(
+          projectId,
+          selectedMilestone.milestoneId
+        );
+        if (historyRes.isSuccess && historyRes.data) {
+          setSubmissionHistory(historyRes.data);
+        }
+      }
+
+      setUploadFileList([]);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -337,6 +406,7 @@ export default function StudentMilestones({
         onCancel={() => {
           setViewModalOpen(false);
           setSubmissionHistory(null);
+          setUploadFileList([]);
         }}
         style={{ top: 20 }}
         footer={
@@ -344,6 +414,7 @@ export default function StudentMilestones({
             onClick={() => {
               setViewModalOpen(false);
               setSubmissionHistory(null);
+              setUploadFileList([]);
             }}
           >
             Close
@@ -439,7 +510,7 @@ export default function StudentMilestones({
                                     key={file.fileId}
                                     className="flex items-center justify-between p-2 bg-white rounded hover:bg-gray-100"
                                   >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-1">
                                       <FileText className="w-4 h-4 text-gray-500" />
                                       <a
                                         href={file.fileUrl}
@@ -450,11 +521,65 @@ export default function StudentMilestones({
                                         {file.fileName}
                                       </a>
                                     </div>
-                                    <span className="text-xs text-gray-500">
-                                      {dayjs(file.uploadedAt).format("DD/MM HH:mm")}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-500">
+                                        {dayjs(file.uploadedAt).format("DD/MM HH:mm")}
+                                      </span>
+                                      {isLeader && isLatest && (
+                                        <Popconfirm
+                                          title="Delete File"
+                                          description={`Are you sure you want to delete "${file.fileName}"?`}
+                                          onConfirm={() => handleDeleteFile(file.fileId)}
+                                          okText="Delete"
+                                          cancelText="Cancel"
+                                          okButtonProps={{ danger: true }}
+                                        >
+                                          <Button
+                                            type="text"
+                                            size="small"
+                                            danger
+                                            icon={<Trash2 className="w-4 h-4" />}
+                                            disabled={actionLoading}
+                                          />
+                                        </Popconfirm>
+                                      )}
+                                    </div>
                                   </div>
                                 ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {isLeader && isLatest && (
+                            <div className="mt-3 pt-3 border-t">
+                              <h5 className="font-medium text-sm mb-2">
+                                Upload Additional Files
+                              </h5>
+                              <div className="space-y-2">
+                                <Upload
+                                  multiple
+                                  fileList={uploadFileList}
+                                  onChange={({ fileList }) => setUploadFileList(fileList)}
+                                  beforeUpload={() => false}
+                                  maxCount={10}
+                                >
+                                  <Button 
+                                    icon={<UploadCloud className="w-4 h-4" />}
+                                    size="small"
+                                  >
+                                    Select Files
+                                  </Button>
+                                </Upload>
+                                {uploadFileList.length > 0 && (
+                                  <Button
+                                    type="primary"
+                                    size="small"
+                                    onClick={() => handleUploadAdditionalFiles(submission.submissionId)}
+                                    loading={actionLoading}
+                                  >
+                                    Upload {uploadFileList.length} File(s)
+                                  </Button>
+                                )}
                               </div>
                             </div>
                           )}

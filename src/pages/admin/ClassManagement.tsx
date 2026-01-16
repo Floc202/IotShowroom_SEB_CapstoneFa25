@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Empty } from "antd";
+import { Empty, Modal } from "antd";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -10,6 +10,7 @@ import {
   createClass,
   updateClass,
   getClassById,
+  changeClassStatus,
 } from "../../api/classes";
 import { getUsersByRole } from "../../api/users";
 import type { Semester } from "../../types/semesters";
@@ -24,6 +25,7 @@ import { getErrorMessage } from "../../utils/helpers";
 import ClassSearch from "../../components/classes/ClassSearch";
 import ClassesTable from "../../components/classes/ClassesTable";
 import ClassUpsertModal from "../../components/classes/ClassUpsertModal";
+import GraderManagementModal from "../../components/admin/GraderManagementModal";
 
 export default function ClassManagement() {
   const navigate = useNavigate();
@@ -35,6 +37,8 @@ export default function ClassManagement() {
   const [upsertOpen, setUpsertOpen] = useState(false);
   const [editing, setEditing] = useState<ClassItem | null>(null);
   const [instructors, setInstructors] = useState<SimpleUser[]>([]);
+  const [graderModalOpen, setGraderModalOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   const fetchSemesters = useCallback(async () => {
     try {
@@ -143,6 +147,50 @@ export default function ClassManagement() {
     }
   };
 
+  const handleChangeStatus = async (
+    classItem: ClassItem,
+    newStatus: ClassItem["status"]
+  ) => {
+    try {
+      const res = await changeClassStatus(classItem.classId, { status: newStatus });
+      
+      if (!res.isSuccess) {
+        if (res.responseCode === "STUDENTS_WITHOUT_GROUP" && res.data) {
+          const warnings = res.data.warnings || [];
+          Modal.error({
+            title: "Cannot Change Status",
+            content: (
+              <div className="space-y-3">
+                <p className="text-gray-700">{res.message}</p>
+                {warnings.length > 0 && (
+                  <div>
+                    <p className="font-semibold mb-2">Students without group:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {warnings.map((studentName, index) => (
+                        <li key={index} className="text-gray-600">
+                          {studentName}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ),
+            width: 500,
+          });
+        } else {
+          toast.error(res.message || "Status change failed");
+        }
+        return;
+      }
+
+      await doSearch();
+      toast.success(`Status changed to "${newStatus}"`);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -171,6 +219,11 @@ export default function ClassManagement() {
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onManageGraders={(classItem) => {
+                setSelectedClass(classItem);
+                setGraderModalOpen(true);
+              }}
+              onChangeStatus={handleChangeStatus}
             />
           )}
         </>
@@ -184,6 +237,19 @@ export default function ClassManagement() {
         instructors={instructors}
         editing={editing || undefined}
       />
+
+      {selectedClass && (
+        <GraderManagementModal
+          open={graderModalOpen}
+          classId={selectedClass.classId}
+          className={selectedClass.className}
+          instructorId={selectedClass.instructorId}
+          onClose={() => {
+            setGraderModalOpen(false);
+            setSelectedClass(null);
+          }}
+        />
+      )}
     </div>
   );
 }

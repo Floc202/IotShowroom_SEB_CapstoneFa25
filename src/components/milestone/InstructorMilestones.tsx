@@ -11,6 +11,7 @@ import {
   Tag,
   Empty,
   Dropdown,
+  Popconfirm,
   type MenuProps,
 } from "antd";
 import { useAuth } from "../../providers/AuthProvider";
@@ -27,8 +28,8 @@ import {
   updateMilestone,
   deleteMilestone,
 } from "../../api/instructorMilestone";
-import { gradeMilestone } from "../../api/instructor";
-import type { GradeMilestoneRequest } from "../../types/instructor";
+import { gradeMilestone, getProjectGrades } from "../../api/instructor";
+import type { GradeMilestoneRequest, ProjectGrade } from "../../types/instructor";
 import SubmissionHistoryView from "../submission/SubmissionHistoryView";
 
 interface InstructorMilestonesProps {
@@ -40,6 +41,7 @@ export default function InstructorMilestones({
 }: InstructorMilestonesProps) {
   const { user } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [grades, setGrades] = useState<ProjectGrade[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [gradeModalOpen, setGradeModalOpen] = useState(false);
@@ -71,9 +73,17 @@ export default function InstructorMilestones({
   const fetchMilestones = async () => {
     try {
       setLoading(true);
-      const res = await getProjectMilestones(projectId);
-      if (res.isSuccess && res.data) {
-        setMilestones(res.data);
+      const [milestonesRes, gradesRes] = await Promise.all([
+        getProjectMilestones(projectId),
+        getProjectGrades(projectId)
+      ]);
+      
+      if (milestonesRes.isSuccess && milestonesRes.data) {
+        setMilestones(milestonesRes.data);
+      }
+      
+      if (gradesRes.isSuccess && gradesRes.data) {
+        setGrades(gradesRes.data);
       }
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -226,6 +236,11 @@ export default function InstructorMilestones({
       setGradeModalOpen(false);
       gradeForm.resetFields();
       setGradingMilestone(null);
+      
+      const gradesRes = await getProjectGrades(projectId);
+      if (gradesRes.isSuccess && gradesRes.data) {
+        setGrades(gradesRes.data);
+      }
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -308,6 +323,38 @@ export default function InstructorMilestones({
       render: (weight: number | null) => (weight ? `${weight}%` : "—"),
     },
     {
+      title: "Grade",
+      key: "grade",
+      width: 120,
+      render: (_: any, record: Milestone) => {
+        const grade = grades.find(g => g.milestoneDefId === record.milestoneId);
+        if (grade) {
+          const getGradeColor = (score: number) => {
+            if (score >= 80) return "green";
+            if (score >= 50) return "blue";
+            if (score >= 30) return "orange";
+            return "red";
+          };
+          
+          return (
+            <Tag color={getGradeColor(grade.score)} className="font-semibold">
+              {grade.score}
+            </Tag>
+          );
+        }
+        return <Tag color="default">Not Graded</Tag>;
+      },
+    },
+    // {
+    //   title: "Graded By",
+    //   key: "gradedBy",
+    //   width: 120,
+    //   render: (_: any, record: Milestone) => {
+    //     const grade = grades.find(g => g.milestoneDefId === record.milestoneId);
+    //     return grade ? grade.instructorName : "—";
+    //   },
+    // },
+    {
       title: "Actions",
       key: "actions",
       width: 80,
@@ -334,18 +381,20 @@ export default function InstructorMilestones({
           },
           {
             key: "delete",
-            label: "Delete",
+            label: (
+              <Popconfirm
+                title="Delete milestone?"
+                description="Are you sure you want to delete this milestone?"
+                onConfirm={() => handleDelete(record.milestoneId)}
+                okText="Delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <span className="text-red-500">Delete</span>
+              </Popconfirm>
+            ),
             icon: <Trash2 className="w-4 h-4" />,
             danger: true,
-            onClick: () => {
-              Modal.confirm({
-                title: "Delete milestone?",
-                content: "Are you sure you want to delete this milestone?",
-                okText: "Delete",
-                okType: "danger",
-                onOk: () => handleDelete(record.milestoneId),
-              });
-            },
           },
         ];
 
