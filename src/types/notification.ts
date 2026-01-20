@@ -9,6 +9,7 @@ export interface Notification {
   type: string;
   isRead: boolean;
   createdAt: string;
+  data: string | null;
 }
 
 export interface NotificationSummary {

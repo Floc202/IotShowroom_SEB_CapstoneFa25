@@ -81,8 +81,7 @@ export default function ProjectOverviewCard({
             {projects.map((project) => {
               const projectCanEdit =
                 canEdit &&
-                project.status.toLowerCase() !== "approved" &&
-                project.status.toLowerCase() !== "rejected";
+                project.status.toLowerCase() !== "approved" 
 
               return (
                 <Panel

@@ -9,6 +9,11 @@ import type { ApiEnvelope } from "../types/base";
 export const login = (payload: LoginRequest) =>
   api.post<LoginResponse>("/Authentication/login", payload).then((r) => r.data);
 
+export const loginWithGoogle = (firebaseToken: string) =>
+  api
+    .post<LoginResponse>("/Authentication/login/google", { firebaseToken })
+    .then((r) => r.data);
+
 export const register = (payload: RegisterRequest) =>
   api
     .post<ApiEnvelope<null | { userId: number }>>("/register", payload)
