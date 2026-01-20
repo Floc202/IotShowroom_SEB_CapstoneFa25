@@ -19,6 +19,8 @@ import type { GroupInvitation } from "../../types/student";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
 import { useAuth } from "../../providers/AuthProvider";
+import { syncMembers } from "../../api/chat";
+import { getGroupsByClass } from "../../api/group";
 
 interface GroupInvitationsProps {
   onChanged?: () => void;
@@ -70,6 +72,34 @@ export default function GroupInvitations({ onChanged, classId }: GroupInvitation
         groupId,
         userId: user.userId,
       });
+
+      // Sync chat members after accepting invitation
+      try {
+        const invitation = invitations.find(inv => inv.groupId === groupId);
+        if (invitation) {
+          // Fetch updated group members from .NET backend
+          const groupsResponse = await getGroupsByClass(invitation.classId);
+          const groups = groupsResponse.data || [];
+          const group = groups.find((g: any) => g.groupId === groupId);
+
+          if (group && group.members) {
+            // Sync members with MongoDB
+            await syncMembers(
+              groupId,
+              group.members.map((m: any) => ({
+                userId: m.userId,
+                email: m.email,
+                fullName: m.fullName || '',
+                avatarUrl: m.avatarUrl || '',
+                roleInGroup: m.roleInGroup || 'Member',
+              }))
+            );
+          }
+        }
+      } catch (chatError) {
+        console.error('Error syncing chat members:', chatError);
+        // Don't block invitation acceptance if chat sync fails
+      }
 
       toast.success("Invitation accepted successfully");
       fetchInvitations();
