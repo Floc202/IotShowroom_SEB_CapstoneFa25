@@ -27,6 +27,8 @@ import {
   getFinalSubmission,
   createFinalSubmission,
   uploadFinalSubmissionFile,
+  updateFinalSubmission,
+  updateFinalSubmissionFile,
 } from "../../api/finalSubmission";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
@@ -69,8 +71,10 @@ export default function FinalSubmissionCard({
   const [submission, setSubmission] = useState<FinalSubmission | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+  const [updateForm] = Form.useForm();
   
   const [reportFile, setReportFile] = useState<UploadFile[]>([]);
   const [presentationFile, setPresentationFile] = useState<UploadFile[]>([]);
@@ -146,6 +150,73 @@ export default function FinalSubmissionCard({
 
       setSubmitModalOpen(false);
       form.resetFields();
+      setReportFile([]);
+      setPresentationFile([]);
+      setSourceCodeFile([]);
+      setVideoFile([]);
+      fetchSubmission();
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!isLeader) return;
+    
+    try {
+      const values = await updateForm.validateFields();
+      setSubmitting(true);
+
+      // Update repository URL and notes
+      const updateRes = await updateFinalSubmission(projectId, {
+        repositoryUrl: values.repositoryUrl,
+        submissionNotes: values.submissionNotes,
+      });
+      
+      if (!updateRes.isSuccess) {
+        toast.error(updateRes.message || "Failed to update submission");
+        return;
+      }
+
+      let uploadErrors = 0;
+
+      // Upload new files if provided
+      const fileUploads: Array<{ type: FileType; file: UploadFile }> = [];
+      
+      if (reportFile.length > 0 && reportFile[0].originFileObj) {
+        fileUploads.push({ type: "report", file: reportFile[0] });
+      }
+      if (presentationFile.length > 0 && presentationFile[0].originFileObj) {
+        fileUploads.push({ type: "presentation", file: presentationFile[0] });
+      }
+      if (sourceCodeFile.length > 0 && sourceCodeFile[0].originFileObj) {
+        fileUploads.push({ type: "sourcecode", file: sourceCodeFile[0] });
+      }
+      if (videoFile.length > 0 && videoFile[0].originFileObj) {
+        fileUploads.push({ type: "video", file: videoFile[0] });
+      }
+
+      for (const { type, file } of fileUploads) {
+        try {
+          await updateFinalSubmissionFile(projectId, type, file.originFileObj as File);
+        } catch (err) {
+          console.error(`Failed to upload ${type}:`, err);
+          uploadErrors++;
+        }
+      }
+
+      if (uploadErrors > 0) {
+        toast.success(
+          `Submission updated but ${uploadErrors} file(s) failed to upload`
+        );
+      } else {
+        toast.success("Final submission updated successfully!");
+      }
+
+      setUpdateModalOpen(false);
+      updateForm.resetFields();
       setReportFile([]);
       setPresentationFile([]);
       setSourceCodeFile([]);
@@ -328,8 +399,30 @@ export default function FinalSubmissionCard({
     );
   }
 
+  const canUpdate = submission && submission.status.toLowerCase() !== "graded" && isLeader;
+
   return (
-    <Card className="shadow-sm" title="Final Submission">
+    <Card 
+      className="shadow-sm" 
+      title="Final Submission"
+      extra={
+        canUpdate && (
+          <Button
+            type="primary"
+            icon={<UploadIcon className="w-4 h-4" />}
+            onClick={() => {
+              updateForm.setFieldsValue({
+                repositoryUrl: submission.repositoryUrl,
+                submissionNotes: submission.submissionNotes,
+              });
+              setUpdateModalOpen(true);
+            }}
+          >
+            Update Submission
+          </Button>
+        )
+      }
+    >
       <div className="space-y-4">
         <Descriptions bordered column={2} size="small">
           <Descriptions.Item label="Status" span={2}>
@@ -416,6 +509,160 @@ export default function FinalSubmissionCard({
           </div>
         </div>
       </div>
+
+      <Modal
+        title="Update Final Submission"
+        open={updateModalOpen}
+        onCancel={() => {
+          setUpdateModalOpen(false);
+          updateForm.resetFields();
+          setReportFile([]);
+          setPresentationFile([]);
+          setSourceCodeFile([]);
+          setVideoFile([]);
+        }}
+        style={{top: 20}}
+        onOk={handleUpdate}
+        okText="Update"
+        confirmLoading={submitting}
+        width={700}
+      >
+        <Form form={updateForm} layout="vertical">
+          <Form.Item
+            label="Repository URL"
+            name="repositoryUrl"
+            rules={[
+              { required: true, message: "Please enter repository URL" },
+              { type: "url", message: "Please enter a valid URL" },
+            ]}
+          >
+            <Input placeholder="https://github.com/username/repository" />
+          </Form.Item>
+          
+          <Form.Item
+            label="Submission Notes"
+            name="submissionNotes"
+            rules={[
+              { required: true, message: "Please enter submission notes" },
+            ]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="Enter any notes about your final submission..."
+            />
+          </Form.Item>
+
+          <div className="space-y-3">
+            <div className="text-sm text-gray-600 mb-2">
+              Upload new files to replace existing ones (Optional)
+            </div>
+            
+            <Form.Item label="Final Report">
+              {submission?.finalReportUrl && (
+                <div className="mb-2 text-sm">
+                  <span className="text-gray-600">Current: </span>
+                  <a
+                    href={submission.finalReportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View existing file
+                  </a>
+                </div>
+              )}
+              <Upload
+                maxCount={1}
+                fileList={reportFile}
+                onChange={({ fileList }) => setReportFile(fileList)}
+                beforeUpload={() => false}
+              >
+                <Button icon={<UploadIcon className="w-4 h-4" />}>
+                  {submission?.finalReportUrl ? "Replace File" : "Choose File"}
+                </Button>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item label="Presentation">
+              {submission?.presentationUrl && (
+                <div className="mb-2 text-sm">
+                  <span className="text-gray-600">Current: </span>
+                  <a
+                    href={submission.presentationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View existing file
+                  </a>
+                </div>
+              )}
+              <Upload
+                maxCount={1}
+                fileList={presentationFile}
+                onChange={({ fileList }) => setPresentationFile(fileList)}
+                beforeUpload={() => false}
+              >
+                <Button icon={<UploadIcon className="w-4 h-4" />}>
+                  {submission?.presentationUrl ? "Replace File" : "Choose File"}
+                </Button>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item label="Source Code">
+              {submission?.sourceCodeUrl && (
+                <div className="mb-2 text-sm">
+                  <span className="text-gray-600">Current: </span>
+                  <a
+                    href={submission.sourceCodeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View existing file
+                  </a>
+                </div>
+              )}
+              <Upload
+                maxCount={1}
+                fileList={sourceCodeFile}
+                onChange={({ fileList }) => setSourceCodeFile(fileList)}
+                beforeUpload={() => false}
+              >
+                <Button icon={<UploadIcon className="w-4 h-4" />}>
+                  {submission?.sourceCodeUrl ? "Replace File" : "Choose File"}
+                </Button>
+              </Upload>
+            </Form.Item>
+
+            <Form.Item label="Video Demo">
+              {submission?.videoDemoUrl && (
+                <div className="mb-2 text-sm">
+                  <span className="text-gray-600">Current: </span>
+                  <a
+                    href={submission.videoDemoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    View existing file
+                  </a>
+                </div>
+              )}
+              <Upload
+                maxCount={1}
+                fileList={videoFile}
+                onChange={({ fileList }) => setVideoFile(fileList)}
+                beforeUpload={() => false}
+              >
+                <Button icon={<UploadIcon className="w-4 h-4" />}>
+                  {submission?.videoDemoUrl ? "Replace File" : "Choose File"}
+                </Button>
+              </Upload>
+            </Form.Item>
+          </div>
+        </Form>
+      </Modal>
     </Card>
   );
 }
