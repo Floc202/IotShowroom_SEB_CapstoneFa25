@@ -58,6 +58,8 @@ import SyllabusListModal from "../../components/syllabus/SyllabusListModal";
 import ProjectTemplateModal from "../../components/student/ProjectTemplateModal";
 import { useAuth } from "../../providers/AuthProvider";
 import { getProjectGrades } from "../../api/instructor";
+import { createChatRoom } from "../../api/chat";
+import { ChatButton } from "../../components/chat/ChatButton";
 import { getFinalSubmission } from "../../api/finalSubmission";
 import type { ProjectGrade } from "../../types/instructor";
 import type { FinalSubmission } from "../../types/finalSubmission";
@@ -179,6 +181,36 @@ export default function StudentClassDetail() {
         groupName: groupName.trim(),
         description: description?.trim() || undefined,
       });
+
+      // Create chat room for the group
+      try {
+        const groupsResponse = await getGroupsByClass(parseInt(id!));
+        const groups = groupsResponse.data || [];
+        const newGroup = groups.find(
+          (g: any) => g.groupName === groupName
+        );
+
+        if (newGroup) {
+          await createChatRoom({
+            groupId: newGroup.groupId,
+            groupName: newGroup.groupName,
+            classId: parseInt(id!),
+            className: cls.className,
+            members: [
+              {
+                userId: user!.userId,
+                email: user!.email,
+                fullName: user!.fullName || '',
+                avatarUrl: user!.avatarUrl || '',
+                roleInGroup: 'Leader',
+              },
+            ],
+          });
+        }
+      } catch (chatError) {
+        console.error('Error creating chat room:', chatError);
+        // Don't block group creation if chat fails
+      }
 
       toast.success("Group created");
       setOpenCreate(false);
@@ -421,15 +453,18 @@ export default function StudentClassDetail() {
                   </div>
                 </div>
                 {cls.myGroup && (
-                  <Badge count={groupDetail?.members?.length || 0} showZero>
-                    <button
-                      onClick={() => setMembersDrawerOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 !text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer"
-                    >
-                      <Users className="w-4 h-4" />
-                      Members
-                    </button>
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge count={groupDetail?.members?.length || 0} showZero>
+                      <button
+                        onClick={() => setMembersDrawerOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 !text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all cursor-pointer"
+                      >
+                        <Users className="w-4 h-4" />
+                        Members
+                      </button>
+                    </Badge>
+                    <ChatButton groupId={cls.myGroup.groupId} />
+                  </div>
                 )}
               </div>
 

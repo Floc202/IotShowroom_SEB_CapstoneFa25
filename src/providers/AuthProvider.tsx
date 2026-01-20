@@ -6,7 +6,7 @@ import React, {
   useState,
 } from "react";
 import { getMe } from "../api/users";
-import { login as loginApi, logout as logoutApi } from "../api/auth";
+import { login as loginApi, logout as logoutApi, loginWithGoogle as loginWithGoogleApi } from "../api/auth";
 import { STORAGE_KEYS } from "../utils/constants";
 import type { Me, RoleName } from "../types/auth";
 
@@ -17,6 +17,7 @@ interface AuthState {
     email: string,
     password: string
   ) => Promise<{ ok: boolean; message?: string }>;
+  loginWithGoogle: (firebaseToken: string) => Promise<{ ok: boolean; message?: string; data?: any }>;
   logout: () => Promise<void>;
   hasRole: (roles: RoleName | RoleName[]) => boolean;
   refreshMe: () => Promise<void>;
@@ -67,6 +68,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const loginWithGoogle = async (firebaseToken: string) => {
+    try {
+      const res = await loginWithGoogleApi(firebaseToken);
+      if (!res.isSuccess || !res.data) {
+        return { ok: false, message: res.message || "Google login failed" };
+      }
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, res.data.refreshToken);
+
+      const me = await getMe();
+
+      if (me.isSuccess) setUser(me.data as Me);
+      return { ok: true, data: res.data };
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message || err?.message || "Google login failed";
+      return { ok: false, message: msg };
+    }
+  };
+
   const logout = async () => {
     try {
       await logoutApi();
@@ -87,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, logout, hasRole, refreshMe }),
+    () => ({ user, loading, login, loginWithGoogle, logout, hasRole, refreshMe }),
     [user, loading]
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

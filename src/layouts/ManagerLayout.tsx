@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Layout, Avatar, Dropdown } from "antd";
+import { useMemo, useState, useEffect } from "react";
+import { Layout, Avatar, Dropdown, Badge } from "antd";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../providers/AuthProvider";
 import {
@@ -13,12 +13,14 @@ import {
   User as UserIcon,
   LogOut,
   Calendar,
-  ClipboardCheck
+  ClipboardCheck,
 } from "lucide-react";
 import { ROLES } from "../utils/constants";
 import logo from "../assets/logo.png";
 import { useNotificationHub } from "../hooks/useNotificationHub";
 import toast from "react-hot-toast";
+import { getNotificationSummary } from "../api/notification";
+import { FloatingChatBubble } from "../components/chat/FloatingChatBubble";
 
 const { Sider, Header, Content } = Layout;
 
@@ -27,12 +29,29 @@ export default function ManagerLayout() {
   const role = (user?.roleName || "").toString();
   const loc = useLocation();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchNotificationSummary = async () => {
+    try {
+      const res = await getNotificationSummary();
+      if (res.isSuccess && res.data) {
+        setUnreadCount(res.data.unreadCount);
+      }
+    } catch (e) {
+      console.error("Failed to fetch notification summary:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotificationSummary();
+  }, []);
 
   useNotificationHub({
     onNotification: (notification) => {
       toast.success(`${notification.title}: ${notification.message}`, {
         duration: 5,
       });
+      fetchNotificationSummary();
     },
   });
 
@@ -58,15 +77,14 @@ export default function ManagerLayout() {
         { id: "/admin/users", icon: Users, label: "User Management" },
         { id: "/admin/semesters", icon: Calendar, label: "Semester Management" },
         { id: "/admin/classes", icon: BookOpen, label: "Classes" },
-        // { id: "/admin/monitoring", icon: Monitor, label: "Project Monitoring" },
         { id: "/admin/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         {
           id: "/notifications",
           icon: MessageSquare,
           label: "Notifications",
+          showBadge: true,
         },
         { id: "/admin/reports", icon: BarChart3, label: "Reports" },
-        // { id: "/admin/settings", icon: Settings, label: "System Settings" },
       ];
     if (role === ROLES.INSTRUCTOR)
       return [
@@ -77,6 +95,7 @@ export default function ManagerLayout() {
           id: "/notifications",
           icon: MessageSquare,
           label: "Notifications",
+          showBadge: true,
         },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
@@ -84,7 +103,12 @@ export default function ManagerLayout() {
       return [
         { id: "/student/dashboard", icon: Home, label: "Dashboard" },
         { id: "/student/classes", icon: BookOpen, label: "My Classes" },
-        { id: "/notifications", icon: Bell, label: "Notifications" },
+        {
+          id: "/notifications",
+          icon: Bell,
+          label: "Notifications",
+          showBadge: true,
+        },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
     return [{ id: "/", icon: Home, label: "Dashboard" }];
@@ -128,7 +152,10 @@ export default function ManagerLayout() {
                     }`}
                   >
                     <Icon className="w-5 h-5" />
-                    <span>{it.label}</span>
+                    <span className="flex-1">{it.label}</span>
+                    {it.showBadge && unreadCount > 0 && (
+                      <Badge count={unreadCount} />
+                    )}
                   </div>
                 </li>
               );
@@ -166,6 +193,8 @@ export default function ManagerLayout() {
           <Outlet />
         </Content>
       </Layout>
+
+      {role === ROLES.STUDENT && <FloatingChatBubble />}
     </Layout>
   );
 }

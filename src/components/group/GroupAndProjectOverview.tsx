@@ -56,6 +56,8 @@ export default function GroupAndProjectOverview({
         getProjectByGroup(groupId),
       ]);
 
+      console.log("Fetched group data:", groupData);
+
       if (groupData.status === "fulfilled") {
         setDetail(groupData.value);
       }

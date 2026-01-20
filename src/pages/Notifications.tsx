@@ -70,10 +70,10 @@ export default function NotificationsPage() {
 
       setNotifications((prev) => {
         const exists = prev.some(
-          (n) => n.notificationId === notification.notificationId
+          (n) => n.notificationId === notification.notificationId,
         );
         console.log(
-          `[Notifications] Notification ID ${notification.notificationId} exists: ${exists}`
+          `[Notifications] Notification ID ${notification.notificationId} exists: ${exists}`,
         );
 
         if (exists) {
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
 
   const fetchNotifications = async (
     page: number = 1,
-    append: boolean = false
+    append: boolean = false,
   ) => {
     try {
       if (page === 1) {
@@ -181,8 +181,8 @@ export default function NotificationsPage() {
       if (res.isSuccess) {
         setNotifications((prev) =>
           prev.map((n) =>
-            n.notificationId === notificationId ? { ...n, isRead: true } : n
-          )
+            n.notificationId === notificationId ? { ...n, isRead: true } : n,
+          ),
         );
         fetchSummary();
         toast.success("Marked as read");
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
       const res = await deleteNotification(notificationId);
       if (res.isSuccess) {
         setNotifications((prev) =>
-          prev.filter((n) => n.notificationId !== notificationId)
+          prev.filter((n) => n.notificationId !== notificationId),
         );
         fetchSummary();
         toast.success("Notification deleted");
@@ -264,10 +264,19 @@ export default function NotificationsPage() {
       await handleMarkAsRead(notification.notificationId);
     }
 
+    let parsedData: any = null;
+    if (notification.data) {
+      try {
+        parsedData =
+          typeof notification.data === "string"
+            ? JSON.parse(notification.data)
+            : notification.data;
+      } catch (e) {
+        console.error("Failed to parse notification data:", e);
+      }
+    }
+
     switch (notification.type.toLowerCase()) {
-      case "project_submitted":
-        navigate("");
-        break;
       case "graded":
         navigate("");
         break;
@@ -275,22 +284,30 @@ export default function NotificationsPage() {
       case "grader_removed":
         navigate("/instructor/grading");
         break;
+      case "final_submission":
+      case "project_submitted":
       case "milestone_weight_warning":
-        navigate("");
+        if (parsedData?.classId && parsedData?.groupId) {
+          navigate(
+            `/instructor/classes/${parsedData.classId}/groups/${parsedData.groupId}`,
+          );
+        } else {
+          navigate("/instructor/classes");
+        }
         break;
       case "milestone_deadline_reminder":
-        navigate("");
+      case "final_graded":
+      case "group_invitation":
+      case "group_create":
+      case "project_status":
+        if (parsedData?.classId) {
+          navigate(`/student/classes/${parsedData.classId}`);
+        } else {
+          navigate("/student/classes");
+        }
         break;
       case "group_assigned":
         navigate("");
-        break;
-      case "final_submission":
-        navigate("/instructor/classes");
-        break;
-      case "final_graded":
-      case "group_create":
-      case "project_status":
-        navigate("/student/classes");
         break;
       case "leader_assigned":
         navigate("");

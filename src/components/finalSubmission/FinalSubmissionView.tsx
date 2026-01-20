@@ -11,6 +11,7 @@ import {
   Input,
   InputNumber,
   Table,
+  Tooltip,
 } from "antd";
 import { FileText, Download, Calendar, Award, User } from "lucide-react";
 import { getFinalSubmission } from "../../api/finalSubmission";
@@ -87,6 +88,17 @@ export default function FinalSubmissionView({
       return sum + score * criterion.weight;
     }, 0);
     return total;
+  };
+
+  const isAllDocumentsSubmitted = () => {
+    if (!submission) return false;
+    return !!(
+      submission.repositoryUrl &&
+      submission.sourceCodeUrl &&
+      submission.finalReportUrl &&
+      submission.presentationUrl &&
+      submission.videoDemoUrl
+    );
   };
 
   useEffect(() => {
@@ -203,20 +215,29 @@ export default function FinalSubmissionView({
                 {submission.status?.toUpperCase()}
               </Tag>
               {role === "instructor" && !submission.grade && (
-                <Button
-                  type="primary"
-                  size="small"
-                  icon={<Award className="w-4 h-4" />}
-                  onClick={() => {
-                    form.setFieldsValue({
-                      grade: submission.grade || undefined,
-                      feedback: submission.feedback || "",
-                    });
-                    setGradeModalOpen(true);
-                  }}
+                <Tooltip
+                  title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
                 >
-                  Grade Submission
-                </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<Award className="w-4 h-4" />}
+                    disabled={!isAllDocumentsSubmitted()}
+                    onClick={() => {
+                      if (!isAllDocumentsSubmitted()) {
+                        toast.error("Cannot submit grade. Student has not submitted all required documents.");
+                        return;
+                      }
+                      form.setFieldsValue({
+                        grade: submission.grade || undefined,
+                        feedback: submission.feedback || "",
+                      });
+                      setGradeModalOpen(true);
+                    }}
+                  >
+                    Grade Submission
+                  </Button>
+                </Tooltip>
               )}
             </div>
           </div>

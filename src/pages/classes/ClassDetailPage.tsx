@@ -77,14 +77,18 @@ export default function ClassDetailPage() {
   const [addMode, setAddMode] = useState<AddMode>("select");
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [studentsPool, setStudentsPool] = useState<UserItem[]>([]);
-  const [selectedStudentId, setSelectedStudentId] = useState<
-    number | string | null
-  >(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<
+    (number | string)[]
+  >([]);
   const [autoMaxMembers, setAutoMaxMembers] = useState<number>(0);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchTimeout, setSearchTimeout] = useState<number | null>(null);
   const [submittingAdd, setSubmittingAdd] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [fileList, setFileList] = useState<any[]>([]);
-  const [importResult, setImportResult] = useState<ImportStudentsResult | null>(null);
+  const [importResult, setImportResult] = useState<ImportStudentsResult | null>(
+    null,
+  );
   const [showImportResult, setShowImportResult] = useState(false);
 
   const fetchDetail = async () => {
@@ -104,22 +108,46 @@ export default function ClassDetailPage() {
     fetchDetail();
   }, [id]);
 
-  useEffect(() => {
-    const needLoadStudents = addModalOpen && addMode === "select";
-    if (!needLoadStudents) return;
-    (async () => {
-      try {
-        setLoadingUsers(true);
-        const res = await getUsersByRole(3);
-        const list = res?.data ?? [];
-        setStudentsPool(list);
-      } catch (e: any) {
-        toast.error(getErrorMessage(e));
-      } finally {
-        setLoadingUsers(false);
-      }
-    })();
-  }, [addModalOpen, addMode]);
+  const searchStudents = async (keyword: string) => {
+    if (!keyword || keyword.trim().length < 2) {
+      setStudentsPool([]);
+      return;
+    }
+
+    try {
+      setLoadingUsers(true);
+      const res = await getUsersByRole(3);
+      const list = res?.data ?? [];
+
+      const filtered = list.filter((student: UserItem) => {
+        const searchLower = keyword.toLowerCase().trim();
+        return (
+          student.fullName?.toLowerCase().includes(searchLower) ||
+          student.email?.toLowerCase().includes(searchLower)
+        );
+      });
+
+      setStudentsPool(filtered);
+    } catch (e: any) {
+      toast.error(getErrorMessage(e));
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+
+    const timeout = setTimeout(() => {
+      searchStudents(value);
+    }, 500);
+
+    setSearchTimeout(timeout);
+  };
 
   if (loading || !detail) {
     return (
@@ -161,12 +189,14 @@ export default function ClassDetailPage() {
   const isAdmin = user?.roleName && user.roleName === ROLES?.ADMIN;
 
   const openAddModal = () => {
-    setSelectedStudentId(null);
+    setSelectedStudentIds([]);
     setAutoMaxMembers(0);
     setAddMode("select");
     setFileList([]);
     setImportResult(null);
     setShowImportResult(false);
+    setSearchValue("");
+    setStudentsPool([]);
     setAddModalOpen(true);
   };
 
@@ -179,11 +209,11 @@ export default function ClassDetailPage() {
           toast.error("Please select an Excel file");
           return;
         }
-      
+
         const file = fileList[0].originFileObj;
-          console.log("file: ", file)
+        console.log("file: ", file);
         const res = await importStudentsToClass(Number(id), file);
-        
+
         if (!res.isSuccess || !res.data) {
           toast.error(res.message || "Import failed");
           return;
@@ -191,62 +221,101 @@ export default function ClassDetailPage() {
 
         setImportResult(res.data);
         setShowImportResult(true);
-        
+
         if (res.data.successCount > 0) {
-          toast.success(`Successfully imported ${res.data.successCount} students`);
+          toast.success(
+            `Successfully imported ${res.data.successCount} students`,
+          );
           await fetchDetail();
         }
-        
+
         if (res.data.failedCount > 0) {
           toast(`${res.data.failedCount} students failed to import`, {
-            icon: '⚠️',
+            icon: "⚠️",
             style: {
-              background: '#FFA500',
-              color: '#fff',
+              background: "#FFA500",
+              color: "#fff",
             },
           });
         }
-        
+
         return;
       }
 
       if (addMode === "select") {
-        if (!selectedStudentId) {
-          toast.error("Please select a student to add.");
+        if (!selectedStudentIds || selectedStudentIds.length === 0) {
+          toast.error("Please select at least one student to add.");
           return;
         }
-        await addStudentToClass(Number(id), {
-          studentId: Number(selectedStudentId),
-        });
-        const picked = studentsPool.find(
-          (u) => String(u.userId) === String(selectedStudentId)
-        );
-        const newStudent = picked
-          ? {
-              userId: picked.userId,
-              fullName: picked.fullName,
-              email: picked.email,
-              enrolledAt: new Date().toISOString(),
-            }
-          : {
-              userId: selectedStudentId,
-              fullName: "New Student",
-              email: "",
-              enrolledAt: new Date().toISOString(),
-            };
-        setDetail((prev) =>
-          prev
-            ? {
-                ...prev,
-                totalStudents: (prev.totalStudents ?? 0) + 1,
-                students: [newStudent as any, ...prev.students],
-              }
-            : prev
-        );
-        setStudentsPool((prev) =>
-          prev.filter((u) => String(u.userId) !== String(selectedStudentId))
-        );
-        toast.success("Student added to class successfully.");
+
+        let successCount = 0;
+        let failCount = 0;
+        const addedStudents: any[] = [];
+
+        for (const studentId of selectedStudentIds) {
+          try {
+            await addStudentToClass(Number(id), {
+              studentId: Number(studentId),
+            });
+
+            const picked = studentsPool.find(
+              (u) => String(u.userId) === String(studentId),
+            );
+            const newStudent = picked
+              ? {
+                  userId: picked.userId,
+                  fullName: picked.fullName,
+                  email: picked.email,
+                  enrolledAt: new Date().toISOString(),
+                }
+              : {
+                  userId: studentId,
+                  fullName: "New Student",
+                  email: "",
+                  enrolledAt: new Date().toISOString(),
+                };
+            addedStudents.push(newStudent);
+            successCount++;
+          } catch (e: any) {
+            failCount++;
+            console.error(`Failed to add student ${studentId}:`, e);
+          }
+        }
+
+        if (addedStudents.length > 0) {
+          setDetail((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  totalStudents:
+                    (prev.totalStudents ?? 0) + addedStudents.length,
+                  students: [...addedStudents, ...prev.students],
+                }
+              : prev,
+          );
+          setStudentsPool((prev) =>
+            prev.filter(
+              (u) =>
+                !selectedStudentIds.some(
+                  (id) => String(id) === String(u.userId),
+                ),
+            ),
+          );
+        }
+
+        if (successCount > 0) {
+          toast.success(
+            `Successfully added ${successCount} student${successCount > 1 ? "s" : ""} to class.`,
+          );
+        }
+        if (failCount > 0) {
+          toast.error(
+            `Failed to add ${failCount} student${failCount > 1 ? "s" : ""}.`,
+          );
+        }
+        
+        setSelectedStudentIds([]);
+        setSearchValue("");
       } else {
         const res = await bulkAddStudents({
           classId: Number(id),
@@ -270,13 +339,13 @@ export default function ClassDetailPage() {
                   totalStudents: (prev.totalStudents ?? 0) + mapped.length,
                   students: [...mapped, ...prev.students],
                 }
-              : prev
+              : prev,
           );
           setStudentsPool((prev) =>
             prev.filter(
               (u) =>
-                !mapped.some((m: any) => String(m.userId) === String(u.userId))
-            )
+                !mapped.some((m: any) => String(m.userId) === String(u.userId)),
+            ),
           );
         } else {
           setDetail((prev) =>
@@ -288,7 +357,7 @@ export default function ClassDetailPage() {
                       ? autoMaxMembers
                       : prev.totalStudents,
                 }
-              : prev
+              : prev,
           );
         }
         toast.success("Students automatically added to class.");
@@ -312,10 +381,10 @@ export default function ClassDetailPage() {
               ...prev,
               totalStudents: Math.max(0, (prev.totalStudents ?? 0) - 1),
               students: prev.students.filter(
-                (s: any) => Number(s.userId) !== Number(studentId)
+                (s: any) => Number(s.userId) !== Number(studentId),
               ),
             }
-          : prev
+          : prev,
       );
       toast.success("Student removed from class successfully.");
     } catch (e: any) {
@@ -569,11 +638,17 @@ export default function ClassDetailPage() {
           setShowImportResult(false);
         }}
         onOk={handleAddStudent}
-        okText={addMode === "select" ? "Add Student" : addMode === "auto" ? "Auto Fill" : "Import"}
+        okText={
+          addMode === "select"
+            ? "Add Student"
+            : addMode === "auto"
+              ? "Auto Fill"
+              : "Import"
+        }
         confirmLoading={submittingAdd}
         destroyOnClose
         width={showImportResult ? 900 : 600}
-        style={{top: 20}}
+        style={{ top: 20 }}
       >
         {showImportResult && importResult ? (
           <div className="space-y-4">
@@ -582,22 +657,30 @@ export default function ClassDetailPage() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-gray-600">Total Rows:</span>
-                  <span className="ml-2 font-semibold">{importResult.totalRows}</span>
+                  <span className="ml-2 font-semibold">
+                    {importResult.totalRows}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Success:</span>
-                  <span className="ml-2 font-semibold text-green-600">{importResult.successCount}</span>
+                  <span className="ml-2 font-semibold text-green-600">
+                    {importResult.successCount}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Failed:</span>
-                  <span className="ml-2 font-semibold text-red-600">{importResult.failedCount}</span>
+                  <span className="ml-2 font-semibold text-red-600">
+                    {importResult.failedCount}
+                  </span>
                 </div>
               </div>
             </div>
 
             {importResult.successfulStudents.length > 0 && (
               <div>
-                <h4 className="font-medium text-green-700 mb-2">Successful Imports</h4>
+                <h4 className="font-medium text-green-700 mb-2">
+                  Successful Imports
+                </h4>
                 <Table
                   dataSource={importResult.successfulStudents}
                   rowKey="rowNumber"
@@ -634,7 +717,9 @@ export default function ClassDetailPage() {
 
             {importResult.failedStudents.length > 0 && (
               <div>
-                <h4 className="font-medium text-red-700 mb-2">Failed Imports</h4>
+                <h4 className="font-medium text-red-700 mb-2">
+                  Failed Imports
+                </h4>
                 <Table
                   dataSource={importResult.failedStudents}
                   rowKey="rowNumber"
@@ -671,10 +756,13 @@ export default function ClassDetailPage() {
             )}
 
             <div className="flex justify-end">
-              <Button type="primary" onClick={() => {
-                setAddModalOpen(false);
-                setShowImportResult(false);
-              }}>
+              <Button
+                type="primary"
+                onClick={() => {
+                  setAddModalOpen(false);
+                  setShowImportResult(false);
+                }}
+              >
                 Close
               </Button>
             </div>
@@ -708,7 +796,8 @@ export default function ClassDetailPage() {
                   <div className="flex flex-col">
                     <Text strong>Import from Excel</Text>
                     <Paragraph type="secondary" className="mb-1">
-                      Upload an Excel file containing student email addresses to import multiple students at once.
+                      Upload an Excel file containing student email addresses to
+                      import multiple students at once.
                     </Paragraph>
                   </div>
                 </Radio>
@@ -718,22 +807,117 @@ export default function ClassDetailPage() {
             <Divider className="my-2" />
 
             {addMode === "select" ? (
-              <div className="space-y-1">
-                <Text>Select Student</Text>
-                <Select
-                  showSearch
-                  placeholder="Search by name or email"
-                  optionFilterProp="label"
-                  loading={loadingUsers}
-                  value={selectedStudentId ?? undefined}
-                  onChange={(val) => setSelectedStudentId(val)}
-                  className="w-full"
-                  options={(studentsPool ?? []).map((u) => ({
-                    value: u.userId,
-                    label: `${u.fullName} — ${u.email}`,
-                  }))}
-                  notFoundContent={loadingUsers ? "Loading..." : "No data"}
-                />
+              <div className="space-y-4">
+                <div>
+                  <Text strong className="text-base mb-2 block">
+                    Select Students
+                  </Text>
+                  <Select
+                    mode="multiple"
+                    showSearch
+                    placeholder="Type to search by name or email (min 2 characters)..."
+                    filterOption={false}
+                    loading={loadingUsers}
+                    value={selectedStudentIds}
+                    onChange={(val) => setSelectedStudentIds(val)}
+                    onSearch={handleSearchChange}
+                    searchValue={searchValue}
+                    className="w-full"
+                    size="large"
+                    options={(studentsPool ?? []).map((u) => ({
+                      value: u.userId,
+                      label: `${u.fullName} — ${u.email}`,
+                    }))}
+                    notFoundContent={
+                      loadingUsers
+                        ? "Searching..."
+                        : searchValue.length < 2
+                          ? "Type at least 2 characters to search"
+                          : "No students found"
+                    }
+                    maxTagCount={0}
+                    maxTagPlaceholder={(omittedValues) => (
+                      <div className="flex items-center gap-1.5 px-2 py-0.5  text-blue-700 rounded">
+                        <Users size={14} />
+                        <span className="font-medium">
+                          {omittedValues.length} selected
+                        </span>
+                      </div>
+                    )}
+                  />
+                </div>
+
+                {selectedStudentIds.length > 0 && (
+                  <div className="border-2 border-blue-100 rounded-lg p-4 bg-gradient-to-br from-blue-50 to-white">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Users size={16} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <Text strong className="text-base text-gray-800">
+                            Selected Students
+                          </Text>
+                          <div className="text-xs text-gray-500">
+                            {selectedStudentIds.length} student
+                            {selectedStudentIds.length > 1 ? "s" : ""}
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        type="primary"
+                        size="small"
+                        danger
+                        ghost
+                        onClick={() => setSelectedStudentIds([])}
+                        className="font-medium"
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                      {selectedStudentIds.map((id, index) => {
+                        const student = studentsPool.find(
+                          (u) => String(u.userId) === String(id),
+                        );
+                        return (
+                          <div
+                            key={id}
+                            className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all duration-200"
+                          >
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center flex-shrink-0">
+                              <GraduationCap
+                                size={16}
+                                className="text-blue-600"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-sm text-gray-800 truncate">
+                                {index + 1}.{" "}
+                                {student?.fullName || "Unknown Student"}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {student?.email || "No email"}
+                              </div>
+                            </div>
+                            <Button
+                              type="text"
+                              danger
+                              size="small"
+                              icon={<UserMinus size={16} />}
+                              onClick={() =>
+                                setSelectedStudentIds((prev) =>
+                                  prev.filter((sid) => sid !== id),
+                                )
+                              }
+                              className="flex-shrink-0 hover:bg-red-50"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : addMode === "auto" ? (
               <div className="space-y-1">
@@ -755,39 +939,58 @@ export default function ClassDetailPage() {
             ) : (
               <div className="space-y-3">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-800 mb-3">Excel Format Required:</h4>
+                  <h4 className="font-medium text-gray-800 mb-3">
+                    Excel Format Required:
+                  </h4>
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse border border-gray-300 text-sm">
                       <thead>
                         <tr className="bg-gray-200">
-                          <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Email</th>
+                          <th className="border border-gray-300 px-3 py-2 text-left font-semibold">
+                            Email
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="bg-white">
-                          <td className="border border-gray-300 px-3 py-2">student@fpt.edu.vn</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            student@fpt.edu.vn
+                          </td>
                         </tr>
                         <tr className="bg-gray-50">
-                          <td className="border border-gray-300 px-3 py-2">student@example.com</td>
+                          <td className="border border-gray-300 px-3 py-2">
+                            student@example.com
+                          </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                   <p className="text-xs text-gray-600 mt-3">
-                    <strong>Note:</strong> The Excel file must contain an "Email" column with student email addresses. Only existing students in the system can be added.
+                    <strong>Note:</strong> The Excel file must contain an
+                    "Email" column with student email addresses. Only existing
+                    students in the system can be added.
                   </p>
                 </div>
 
                 <Upload.Dragger
                   fileList={fileList}
                   beforeUpload={(file: File) => {
-                    const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-                                   file.type === 'application/vnd.ms-excel';
+                    const isExcel =
+                      file.type ===
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                      file.type === "application/vnd.ms-excel";
                     if (!isExcel) {
-                      toast.error('You can only upload Excel files!');
+                      toast.error("You can only upload Excel files!");
                       return false;
                     }
-                    setFileList([{ ...file, uid: file.name, name: file.name, originFileObj: file }]);
+                    setFileList([
+                      {
+                        ...file,
+                        uid: file.name,
+                        name: file.name,
+                        originFileObj: file,
+                      },
+                    ]);
                     return false;
                   }}
                   onRemove={() => {
@@ -796,7 +999,10 @@ export default function ClassDetailPage() {
                   maxCount={1}
                 >
                   <p className="ant-upload-drag-icon">
-                    <FileSpreadsheet size={48} className="mx-auto text-gray-400" />
+                    <FileSpreadsheet
+                      size={48}
+                      className="mx-auto text-gray-400"
+                    />
                   </p>
                   <p className="ant-upload-text">
                     Click or drag Excel file to this area to upload

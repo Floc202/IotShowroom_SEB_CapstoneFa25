@@ -12,6 +12,7 @@ import {
   Tag,
   Breadcrumb,
   Collapse,
+  Tooltip,
 } from "antd";
 import { ArrowLeft, FileText, Cpu, Award } from "lucide-react";
 import dayjs from "dayjs";
@@ -64,6 +65,17 @@ export default function InstructorGradingSubmissionView() {
     return total;
   };
 
+  const isAllDocumentsSubmitted = () => {
+    if (!submissionDetail) return false;
+    return !!(
+      submissionDetail.repositoryUrl &&
+      submissionDetail.sourceCodeUrl &&
+      submissionDetail.finalReportUrl &&
+      submissionDetail.presentationUrl &&
+      submissionDetail.videoDemoUrl
+    );
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     if (finalSubmissionId) {
@@ -101,6 +113,10 @@ export default function InstructorGradingSubmissionView() {
   };
 
   const handleGrade = () => {
+    if (!isAllDocumentsSubmitted()) {
+      toast.error("Cannot submit grade. Student has not submitted all required documents.");
+      return;
+    }
     setGradeModalVisible(true);
     form.resetFields();
     setRubricScores({
@@ -165,9 +181,18 @@ export default function InstructorGradingSubmissionView() {
             </p>
           </div>
         </div>
-        <Button type="primary" size="large" onClick={handleGrade}>
-          Submit Grade
-        </Button>
+        <Tooltip
+          title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
+        >
+          <Button
+            type="primary"
+            size="large"
+            onClick={handleGrade}
+            disabled={!isAllDocumentsSubmitted()}
+          >
+            Submit Grade
+          </Button>
+        </Tooltip>
       </div>
 
       <Card size="small" className="mb-4">
