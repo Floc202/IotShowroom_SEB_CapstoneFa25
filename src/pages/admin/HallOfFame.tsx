@@ -189,8 +189,8 @@ export default function HallOfFame() {
               <Col xs={24} sm={8}>
                 <Card>
                   <Statistic
-                    title="Top Rank"
-                    value={leaderboard.topProjects[0]?.rank || "N/A"}
+                    title="Top 1 Rank"
+                    value={leaderboard.topProjects[0]?.projectName || "N/A"}
                     prefix={<Trophy className="w-5 h-5" />}
                     valueStyle={{ color: "#52c41a" }}
                   />
@@ -213,7 +213,7 @@ export default function HallOfFame() {
             {leaderboard && leaderboard.topProjects.length > 0 ? (
               <>
                 <div className="mb-4 text-sm text-gray-500">
-                  Generated at: {dayjs.utc(leaderboard.generatedAt).add(7, 'hour').format("DD/MM/YYYY HH:mm:ss")} (Vietnam Time)
+                  Generated at: {dayjs.utc(leaderboard.generatedAt).add(7, 'hour').format("DD/MM/YYYY HH:mm:ss")} 
                 </div>
                 <Table
                   dataSource={leaderboard.topProjects}
