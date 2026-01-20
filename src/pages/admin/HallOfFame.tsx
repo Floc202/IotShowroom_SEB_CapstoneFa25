@@ -1,21 +1,30 @@
 import { useState, useEffect } from "react";
-import { Card, Select, Table, Tag, Empty, Spin, Typography, Row, Col, Statistic } from "antd";
-import { Trophy, Medal, Award, Star } from "lucide-react";
-import { getHallOfFame, getHallOfFameBySemester, getLeaderboardTop10 } from "../../api/admin";
+import { Card, Select, Table, Tag, Empty, Spin, Typography, Row, Col, Statistic, Modal, Descriptions, Button, Tabs } from "antd";
+import { Trophy, Medal, Award, Star, Eye, ExternalLink, FileText, Video, Presentation } from "lucide-react";
+import { getLeaderboardTop10 } from "../../api/admin";
 import { listSemesters } from "../../api/semesters";
-import type { HallOfFameItem, LeaderboardTop10 } from "../../types/admin";
+import type { LeaderboardTop10 } from "../../types/admin";
 import type { Semester } from "../../types/semesters";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { Title } = Typography;
+
+type ProjectDetails = LeaderboardTop10['topProjects'][0];
 
 export default function HallOfFame() {
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<number | undefined>(undefined);
-  const [hallOfFame, setHallOfFame] = useState<HallOfFameItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardTop10 | null>(null);
   const [loading, setLoading] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
 
   useEffect(() => {
     fetchSemesters();
@@ -40,15 +49,13 @@ export default function HallOfFame() {
     try {
       setLoading(true);
       if (selectedSemester) {
-        const [hofRes, leaderRes] = await Promise.all([
-          getHallOfFameBySemester(selectedSemester),
-          getLeaderboardTop10(selectedSemester),
-        ]);
-        if (hofRes.isSuccess && hofRes.data) setHallOfFame(hofRes.data);
-        if (leaderRes.isSuccess && leaderRes.data) setLeaderboard(leaderRes.data);
+        const leaderRes = await getLeaderboardTop10(selectedSemester);
+        if (leaderRes.isSuccess && leaderRes.data) {
+          setLeaderboard(leaderRes.data);
+        } else {
+          setLeaderboard(null);
+        }
       } else {
-        const hofRes = await getHallOfFame();
-        if (hofRes.isSuccess && hofRes.data) setHallOfFame(hofRes.data);
         setLeaderboard(null);
       }
     } catch (e) {
@@ -56,6 +63,11 @@ export default function HallOfFame() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const showProjectDetails = (project: ProjectDetails) => {
+    setSelectedProject(project);
+    setDetailsModalOpen(true);
   };
 
   const getRankBadge = (rank: number) => {
@@ -91,12 +103,6 @@ export default function HallOfFame() {
       render: (text: string | null) => text || "N/A",
     },
     {
-      title: "Class",
-      dataIndex: "className",
-      key: "className",
-      render: (text: string | null) => text || "N/A",
-    },
-    {
       title: "Semester",
       dataIndex: "semesterName",
       key: "semesterName",
@@ -112,13 +118,33 @@ export default function HallOfFame() {
           {score?.toFixed(2) || "N/A"}
         </Tag>
       ),
-      sorter: (a: HallOfFameItem, b: HallOfFameItem) => (b.finalScore || 0) - (a.finalScore || 0),
+      sorter: (a: ProjectDetails, b: ProjectDetails) => (b.finalScore || 0) - (a.finalScore || 0),
     },
     {
-      title: "Notes",
-      dataIndex: "notes",
-      key: "notes",
-      render: (notes: string | null) => notes || <span className="text-gray-400">-</span>,
+      title: "Completed",
+      dataIndex: "completedDate",
+      key: "completedDate",
+      width: 150,
+      render: (date: string | null) => {
+        if (!date) return <span className="text-gray-400">-</span>;
+        const vnDate = dayjs.utc(date).add(7, 'hour');
+        return <span>{vnDate.format("DD/MM/YYYY HH:mm")}</span>;
+      },
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 120,
+      render: (_: any, record: ProjectDetails) => (
+        <Button
+          type="primary"
+          icon={<Eye className="w-4 h-4" />}
+          onClick={() => showProjectDetails(record)}
+          size="small"
+        >
+          View Details
+        </Button>
+      ),
     },
   ];
 
@@ -184,19 +210,205 @@ export default function HallOfFame() {
           )}
 
           <Card>
-            {hallOfFame.length > 0 ? (
-              <Table
-                dataSource={hallOfFame}
-                columns={columns}
-                rowKey={(record) => `${record.projectId}-${record.rank}`}
-                pagination={{ pageSize: 20 }}
-              />
+            {leaderboard && leaderboard.topProjects.length > 0 ? (
+              <>
+                <div className="mb-4 text-sm text-gray-500">
+                  Generated at: {dayjs.utc(leaderboard.generatedAt).add(7, 'hour').format("DD/MM/YYYY HH:mm:ss")} (Vietnam Time)
+                </div>
+                <Table
+                  dataSource={leaderboard.topProjects}
+                  columns={columns}
+                  rowKey={(record) => `${record.projectId}-${record.rank}`}
+                  pagination={{ pageSize: 20 }}
+                />
+              </>
             ) : (
-              <Empty description="No projects in Hall of Fame yet" />
+              <Empty description="No leaderboard data available. Please select a semester." />
             )}
           </Card>
         </>
       )}
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            <span>Project Details - Rank #{selectedProject?.rank}</span>
+          </div>
+        }
+        open={detailsModalOpen}
+        onCancel={() => {
+          setDetailsModalOpen(false);
+          setSelectedProject(null);
+        }}
+        footer={null}
+        width={900}
+        style={{ top: 20 }}
+      >
+        {selectedProject && (
+          <Tabs
+            items={[
+              {
+                key: "overview",
+                label: "Overview",
+                children: (
+                  <div className="space-y-4">
+                    <Descriptions bordered column={1} size="small">
+                      <Descriptions.Item label="Project Name">
+                        <span className="font-semibold">{selectedProject.projectName}</span>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Group Name">
+                        {selectedProject.groupName}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Description">
+                        <div className="whitespace-pre-wrap">{selectedProject.projectDescription}</div>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Components">
+                        <div className="whitespace-pre-wrap">{selectedProject.projectComponent}</div>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Final Score">
+                        <Tag color={selectedProject.finalScore >= 90 ? "green" : selectedProject.finalScore >= 80 ? "blue" : "orange"} className="font-bold text-lg">
+                          {selectedProject.finalScore.toFixed(2)}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Completed Date">
+                        {dayjs.utc(selectedProject.completedDate).add(7, 'hour').format("DD/MM/YYYY HH:mm")}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Simulator Link">
+                        {selectedProject.simulatorLink ? (
+                          <a href={selectedProject.simulatorLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                            <ExternalLink className="w-4 h-4" />
+                            Open Simulator
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">Not available</span>
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+                ),
+              },
+              {
+                key: "milestones",
+                label: "Milestones",
+                children: (
+                  <div className="space-y-3">
+                    {selectedProject.milestones.map((milestone) => (
+                      <Card key={milestone.milestoneId} size="small">
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <div className="font-semibold">{milestone.milestoneName}</div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              Weight: <Tag color="blue">{milestone.weight.toFixed(2)}%</Tag>
+                              Score: <Tag color="green">{milestone.score.toFixed(2)}</Tag>
+                              Weighted Score: <Tag color="purple">{milestone.weightedScore.toFixed(2)}</Tag>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ),
+              },
+              {
+                key: "submission",
+                label: "Final Submission",
+                children: (
+                  <div className="space-y-4">
+                    <Descriptions bordered column={1} size="small">
+                      <Descriptions.Item label="Average Grade">
+                        <Tag color="green" className="font-bold text-lg">
+                          {selectedProject.finalSubmission.averageGrade.toFixed(2)}
+                        </Tag>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Submitted At">
+                        {dayjs.utc(selectedProject.finalSubmission.submittedAt).add(7, 'hour').format("DD/MM/YYYY HH:mm")}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Submission Notes">
+                        <div className="whitespace-pre-wrap">{selectedProject.finalSubmission.submissionNotes}</div>
+                      </Descriptions.Item>
+                    </Descriptions>
+
+                    <div>
+                      <h4 className="font-semibold mb-3">Deliverables</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            <span className="font-medium">Final Report</span>
+                          </div>
+                          {selectedProject.finalSubmission.finalReportUrl ? (
+                            <a href={selectedProject.finalSubmission.finalReportUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                              View File
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Not uploaded</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <div className="flex items-center gap-2">
+                            <Presentation className="w-4 h-4" />
+                            <span className="font-medium">Presentation</span>
+                          </div>
+                          {selectedProject.finalSubmission.presentationUrl ? (
+                            <a href={selectedProject.finalSubmission.presentationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                              View File
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Not uploaded</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-4 h-4" />
+                            <span className="font-medium">Demo Video</span>
+                          </div>
+                          {selectedProject.finalSubmission.demoVideoUrl ? (
+                            <a href={selectedProject.finalSubmission.demoVideoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                              View File
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">Not uploaded</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-semibold mb-3">Grader Feedback</h4>
+                      {selectedProject.finalSubmission.graderGrades.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedProject.finalSubmission.graderGrades.map((grader) => (
+                            <Card key={grader.graderId} size="small">
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="font-semibold">{grader.graderName}</div>
+                                    <div className="text-sm text-gray-500">{grader.graderEmail}</div>
+                                  </div>
+                                  <Tag color="blue" className="font-bold">{grader.grade.toFixed(2)}</Tag>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="font-medium">Feedback:</span> {grader.feedback}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  Graded at: {dayjs.utc(grader.gradedAt).add(7, 'hour').format("DD/MM/YYYY HH:mm")}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <Empty description="No grader feedback yet" />
+                      )}
+                    </div>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

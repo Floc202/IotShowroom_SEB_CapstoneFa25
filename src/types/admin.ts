@@ -107,10 +107,42 @@ export interface LeaderboardTop10 {
   semesterName: string;
   totalProjects: number;
   topProjects: Array<{
+    rank: number;
     projectId: number;
     projectName: string;
-    rank: number;
-    score?: number | null;
+    projectDescription: string;
+    projectComponent: string;
+    groupName: string;
+    finalScore: number;
+    semesterName: string;
+    completedDate: string;
+    note: string | null;
+    isInHallOfFame: boolean;
+    milestones: Array<{
+      milestoneId: number;
+      milestoneName: string;
+      weight: number;
+      score: number;
+      weightedScore: number;
+    }>;
+    finalSubmission: {
+      finalSubmissionId: number;
+      averageGrade: number;
+      finalReportUrl: string | null;
+      presentationUrl: string | null;
+      demoVideoUrl: string | null;
+      submissionNotes: string;
+      submittedAt: string;
+      graderGrades: Array<{
+        graderId: number;
+        graderName: string;
+        graderEmail: string;
+        grade: number;
+        feedback: string;
+        gradedAt: string;
+      }>;
+    };
+    simulatorLink: string | null;
   }>;
   generatedAt: string;
 }
