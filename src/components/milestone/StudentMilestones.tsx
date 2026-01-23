@@ -40,6 +40,7 @@ export default function StudentMilestones({
   isLeader,
 }: StudentMilestonesProps) {
   const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [submissions, setSubmissions] = useState<Map<number, SubmissionHistory>>(new Map());
   const [loading, setLoading] = useState(false);
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -61,6 +62,21 @@ export default function StudentMilestones({
       const res = await getMilestones(projectId);
       if (res.isSuccess && res.data) {
         setMilestones(res.data);
+        
+        const submissionMap = new Map<number, SubmissionHistory>();
+        await Promise.all(
+          res.data.map(async (milestone) => {
+            try {
+              const submissionRes = await getSubmissionHistory(projectId, milestone.milestoneId);
+              if (submissionRes.isSuccess && submissionRes.data) {
+                submissionMap.set(milestone.milestoneId, submissionRes.data);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch submissions for milestone ${milestone.milestoneId}`);
+            }
+          })
+        );
+        setSubmissions(submissionMap);
       }
     } catch (e) {
       toast.error(getErrorMessage(e));
@@ -296,6 +312,9 @@ export default function StudentMilestones({
       width: 80,
       align: "center" as const,
       render: (_: any, record: Milestone) => {
+        const submissionHistory = submissions.get(record.milestoneId);
+        const hasSubmissions = submissionHistory && submissionHistory.allVersions && submissionHistory.allVersions.length > 0;
+        
         const menuItems: MenuProps["items"] = [
           {
             key: "view",
@@ -303,7 +322,7 @@ export default function StudentMilestones({
             icon: <Eye className="w-4 h-4" />,
             onClick: () => handleViewSubmission(record),
           },
-          ...(isLeader
+          ...(isLeader && !hasSubmissions
             ? [
                 {
                   key: "submit",

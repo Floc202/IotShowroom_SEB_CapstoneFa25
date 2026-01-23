@@ -328,6 +328,13 @@ export default function InstructorGroupDetail() {
 
   const handleUpdateProjectStatus = async () => {
     if (!selectedProjectId || !user?.userId) return;
+    
+    const currentProject = projects.find(p => p.projectId === selectedProjectId);
+    if (currentProject?.status.toLowerCase() === "approved") {
+      toast.error("Cannot update status: Project is already approved");
+      return;
+    }
+    
     try {
       const values = await statusForm.validateFields();
       const payload: UpdateProjectStatusRequest = {
@@ -555,21 +562,23 @@ export default function InstructorGroupDetail() {
                       >
                         History
                       </Button>
-                      <Button
-                        type="primary"
-                        size="small"
-                        icon={getStatusIcon(project.status)}
-                        onClick={() => {
-                          setSelectedProjectId(project.projectId);
-                          statusForm.setFieldsValue({
-                            status: project.status,
-                            comment: "",
-                          });
-                          setStatusModalOpen(true);
-                        }}
-                      >
-                        Update Status
-                      </Button>
+                      {project.status.toLowerCase() !== "approved" && (
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={getStatusIcon(project.status)}
+                          onClick={() => {
+                            setSelectedProjectId(project.projectId);
+                            statusForm.setFieldsValue({
+                              status: project.status,
+                              comment: "",
+                            });
+                            setStatusModalOpen(true);
+                          }}
+                        >
+                          Update Status
+                        </Button>
+                      )}
                     </div>
                   </div>
                 }

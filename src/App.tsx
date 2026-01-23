@@ -8,6 +8,7 @@ import MainLayout from "./layouts/MainLayout";
 import Home from "./pages/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 import Dashboard from "./pages/admin/Dashboard";
 import HallOfFame from "./pages/admin/HallOfFame";
 import AdminReports from "./pages/admin/AdminReports";
@@ -45,6 +46,7 @@ export default function App() {
               <Route element={<PublicOnlyRoute />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
               </Route>
             </Route>
 

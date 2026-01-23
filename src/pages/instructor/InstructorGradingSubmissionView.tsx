@@ -181,18 +181,20 @@ export default function InstructorGradingSubmissionView() {
             </p>
           </div>
         </div>
-        <Tooltip
-          title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
-        >
-          <Button
-            type="primary"
-            size="large"
-            onClick={handleGrade}
-            disabled={!isAllDocumentsSubmitted()}
+        {submissionDetail.hasMyGrade && (
+          <Tooltip
+            title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
           >
-            Submit Grade
-          </Button>
-        </Tooltip>
+            <Button
+              type="primary"
+              size="large"
+              onClick={handleGrade}
+              disabled={!isAllDocumentsSubmitted()}
+            >
+              Submit Grade
+            </Button>
+          </Tooltip>
+        )}
       </div>
 
       <Card size="small" className="mb-4">

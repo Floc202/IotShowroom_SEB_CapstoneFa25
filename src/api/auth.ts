@@ -3,6 +3,11 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
+  SendOTPRequest,
+  SendOTPResponse,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
+  ChangePasswordRequest,
 } from "../types/auth";
 import type { ApiEnvelope } from "../types/base";
 
@@ -27,5 +32,29 @@ export const refreshToken = (refreshToken: string) =>
     .post<ApiEnvelope<{ accessToken: string; refreshToken: string }>>(
       "/refresh-token",
       { refreshToken }
+    )
+    .then((r) => r.data);
+
+export const sendOTP = (payload: SendOTPRequest) =>
+  api
+    .post<ApiEnvelope<SendOTPResponse>>(
+      "/Authentication/forgot-password/send-otp",
+      payload
+    )
+    .then((r) => r.data);
+
+export const verifyOTP = (payload: VerifyOTPRequest) =>
+  api
+    .post<ApiEnvelope<VerifyOTPResponse>>(
+      "/Authentication/forgot-password/verify-otp",
+      payload
+    )
+    .then((r) => r.data);
+
+export const changePasswordWithOTP = (payload: ChangePasswordRequest) =>
+  api
+    .post<ApiEnvelope<null>>(
+      "/Authentication/forgot-password/change-password",
+      payload
     )
     .then((r) => r.data);

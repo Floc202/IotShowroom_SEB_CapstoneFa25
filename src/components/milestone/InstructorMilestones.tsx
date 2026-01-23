@@ -31,6 +31,8 @@ import {
 import { gradeMilestone, getProjectGrades } from "../../api/instructor";
 import type { GradeMilestoneRequest, ProjectGrade } from "../../types/instructor";
 import SubmissionHistoryView from "../submission/SubmissionHistoryView";
+import { getSubmissionHistory } from "../../api/submission";
+import type { SubmissionHistory } from "../../types/submission";
 
 interface InstructorMilestonesProps {
   projectId: Id;
@@ -42,6 +44,7 @@ export default function InstructorMilestones({
   const { user } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [grades, setGrades] = useState<ProjectGrade[]>([]);
+  const [submissions, setSubmissions] = useState<Map<Id, SubmissionHistory>>(new Map());
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [gradeModalOpen, setGradeModalOpen] = useState(false);
@@ -80,6 +83,21 @@ export default function InstructorMilestones({
       
       if (milestonesRes.isSuccess && milestonesRes.data) {
         setMilestones(milestonesRes.data);
+        
+        const submissionMap = new Map<Id, SubmissionHistory>();
+        await Promise.all(
+          milestonesRes.data.map(async (milestone) => {
+            try {
+              const submissionRes = await getSubmissionHistory(projectId, milestone.milestoneId);
+              if (submissionRes.isSuccess && submissionRes.data) {
+                submissionMap.set(milestone.milestoneId, submissionRes.data);
+              }
+            } catch (error) {
+              console.error(`Failed to fetch submissions for milestone ${milestone.milestoneId}`);
+            }
+          })
+        );
+        setSubmissions(submissionMap);
       }
       
       if (gradesRes.isSuccess && gradesRes.data) {
@@ -205,6 +223,20 @@ export default function InstructorMilestones({
   };
 
   const handleOpenGradeModal = (milestone: Milestone) => {
+    const submissionHistory = submissions.get(milestone.milestoneId);
+    const hasSubmissions = submissionHistory && submissionHistory.allVersions && submissionHistory.allVersions.length > 0;
+    
+    if (!hasSubmissions) {
+      toast.error("Cannot grade milestone: Student has not submitted any work yet");
+      return;
+    }
+    
+    const isAlreadyGraded = grades.some(g => g.milestoneDefId === milestone.milestoneId);
+    if (isAlreadyGraded) {
+      toast.error("Cannot grade milestone: This milestone has already been graded");
+      return;
+    }
+    
     setGradingMilestone(milestone);
     gradeForm.resetFields();
     setGradeModalOpen(true);
@@ -360,6 +392,10 @@ export default function InstructorMilestones({
       width: 80,
       align: "center" as const,
       render: (_: any, record: Milestone) => {
+        const submissionHistory = submissions.get(record.milestoneId);
+        const hasSubmissions = submissionHistory && submissionHistory.allVersions && submissionHistory.allVersions.length > 0;
+        const isAlreadyGraded = grades.some(g => g.milestoneDefId === record.milestoneId);
+        
         const menuItems: MenuProps["items"] = [
           {
             key: "view",
@@ -367,12 +403,12 @@ export default function InstructorMilestones({
             icon: <Eye className="w-4 h-4" />,
             onClick: () => handleViewSubmission(record),
           },
-          {
+          ...(hasSubmissions && !isAlreadyGraded ? [{
             key: "grade",
             label: "Grade Milestone",
             icon: <Award className="w-4 h-4" />,
             onClick: () => handleOpenGradeModal(record),
-          },
+          }] : []),
           {
             key: "edit",
             label: "Edit",
