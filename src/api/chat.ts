@@ -160,7 +160,7 @@ export const getOrCreateChatRoom = async (groupId: number) => {
   }
 };
 
-export const ensureAllChatRooms = async (userId: number) => {
+export const ensureAllChatRooms = async () => {
   try {
     const studentClassesRes = await getStudentClasses();
     

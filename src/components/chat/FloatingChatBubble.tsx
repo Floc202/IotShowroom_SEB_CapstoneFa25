@@ -31,7 +31,7 @@ export const FloatingChatBubble: React.FC = () => {
     if (!user) return;
 
     try {
-      await ensureAllChatRooms(user.userId);
+      await ensureAllChatRooms();
       
       const response = await getUserChatRooms(user.userId);
       if (response.success) {
