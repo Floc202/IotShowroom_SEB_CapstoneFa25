@@ -162,7 +162,12 @@ export const getOrCreateChatRoom = async (groupId: number) => {
 
 export const ensureAllChatRooms = async () => {
   try {
-    const studentClassesRes = await getStudentClasses();
+    const studentClassesRes = await getStudentClasses().catch((e: any) => {
+      if (e?.response?.status === 401) {
+        return { isSuccess: false, data: undefined };
+      }
+      throw e;
+    });
     
     if (!studentClassesRes.isSuccess || !studentClassesRes.data) {
       return;

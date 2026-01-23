@@ -109,7 +109,12 @@ export default function StudentClassDetail() {
       const classId = parseInt(id);
 
       const [classesRes, groupsRes] = await Promise.all([
-        getStudentClasses(),
+        getStudentClasses().catch((e: any) => {
+          if (e?.response?.status === 401) {
+            return { isSuccess: false, data: undefined };
+          }
+          throw e;
+        }),
         getGroupsByClass(classId),
       ]);
 
