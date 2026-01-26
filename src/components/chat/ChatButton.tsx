@@ -3,7 +3,7 @@ import { Button, Badge, message as antdMessage } from 'antd';
 import { MessageCircle } from 'lucide-react';
 import { ChatWindow } from './ChatWindow';
 import type { ChatRoom } from '../../types/chat';
-import { getChatRoom, getUnreadCount } from '../../api/chat';
+import { getChatRoom, getUnreadCount, getOrCreateChatRoom } from '../../api/chat';
 import { useAuth } from '../../providers/AuthProvider';
 
 interface ChatButtonProps {
@@ -71,7 +71,7 @@ export const ChatButton: React.FC<ChatButtonProps> = ({ groupId, className }) =>
 
     setLoading(true);
     try {
-      const response = await getChatRoom(groupId);
+      const response = await getOrCreateChatRoom(groupId);
       if (response.success) {
         setRoom(response.room);
         setOpen(true);

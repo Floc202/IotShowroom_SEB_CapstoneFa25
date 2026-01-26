@@ -1060,20 +1060,20 @@ export default function InstructorClassDetail() {
             label: (
               <span className="flex items-center gap-2">
                 <FolderKanban className="w-4 h-4" />
-                Project Templates ({templates.length})
+                Project Topics ({templates.length})
               </span>
             ),
             children: (
               <Card
                 loading={loading}
-                title="Project Templates"
+                title="Project Topics"
                 extra={
                   <Button
                     type="primary"
                     icon={<Plus className="w-4 h-4" />}
                     onClick={handleCreateTemplate}
                   >
-                    Create Template
+                    Create Topic
                   </Button>
                 }
               >
@@ -1281,7 +1281,11 @@ export default function InstructorClassDetail() {
                 name="groupFormationDeadline"
                 label="Group Formation Deadline"
               >
-                <DatePicker showTime className="w-full" />
+                <DatePicker 
+                  showTime 
+                  className="w-full"
+                  disabledDate={(current) => current && current < dayjs().startOf('day')}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -1387,7 +1391,17 @@ export default function InstructorClassDetail() {
                 name="editWindowEndDate"
                 label="Edit Window End Date"
               >
-                <DatePicker showTime className="w-full" />
+                <DatePicker 
+                  showTime 
+                  className="w-full"
+                  disabledDate={(current) => {
+                    const startDate = configForm.getFieldValue('editWindowStartDate');
+                    if (!current) return false;
+                    if (current < dayjs().startOf('day')) return true;
+                    if (startDate && current <= dayjs(startDate)) return true;
+                    return false;
+                  }}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -1555,7 +1569,7 @@ export default function InstructorClassDetail() {
 
       <Modal
         title={
-          templateFormMode === "create" ? "Create Template" : "Edit Template"
+          templateFormMode === "create" ? "Create Topic" : "Edit Topic"
         }
         open={templateModalOpen}
         onCancel={() => setTemplateModalOpen(false)}
@@ -1608,9 +1622,9 @@ export default function InstructorClassDetail() {
 
           {templateFormMode === "create" && (
             <Form.List name="milestones" initialValue={[]}>
-              {(fields, { add, remove }) => (
+              {(fields, { remove }) => (
                 <>
-                  <div className="flex justify-between items-center mb-2">
+                  {/* <div className="flex justify-between items-center mb-2">
                     <span className="font-medium">Milestones</span>
                     <Button
                       type="dashed"
@@ -1619,7 +1633,7 @@ export default function InstructorClassDetail() {
                     >
                       Add Milestone
                     </Button>
-                  </div>
+                  </div> */}
                   {fields.map(({ key, name, ...restField }) => (
                     <Card key={key} size="small" className="mb-2">
                       <Row gutter={16}>

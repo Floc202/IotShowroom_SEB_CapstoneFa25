@@ -3,7 +3,7 @@ import { Badge, Popover, List, Avatar, Empty } from 'antd';
 import { MessageCircle, X } from 'lucide-react';
 import { ChatWindow } from './ChatWindow';
 import type { ChatRoom } from '../../types/chat';
-import { getUserChatRooms, getUnreadCount } from '../../api/chat';
+import { getUserChatRooms, getUnreadCount, ensureAllChatRooms } from '../../api/chat';
 import { useAuth } from '../../providers/AuthProvider';
 
 interface RoomWithUnread extends ChatRoom {
@@ -31,6 +31,8 @@ export const FloatingChatBubble: React.FC = () => {
     if (!user) return;
 
     try {
+      await ensureAllChatRooms();
+      
       const response = await getUserChatRooms(user.userId);
       if (response.success) {
         const roomsWithUnread = await Promise.all(

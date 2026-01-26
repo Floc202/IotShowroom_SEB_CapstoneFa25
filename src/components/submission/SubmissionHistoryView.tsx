@@ -5,7 +5,7 @@ import { getSubmissionHistory } from "../../api/submission";
 import type { SubmissionHistory, Submission } from "../../types/submission";
 import type { Id } from "../../types/base";
 import toast from "react-hot-toast";
-import { getErrorMessage } from "../../utils/helpers";
+import { getErrorMessage, formatVietnamTime } from "../../utils/helpers";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -92,9 +92,9 @@ export default function SubmissionHistoryView({
         <Descriptions.Item label="Submitted At">
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3" />
-            <span>{dayjs(submission.submittedAt).format("MMM D, YYYY HH:mm")}</span>
+            <span>{formatVietnamTime(submission.submittedAt, "MMM D, YYYY HH:mm")}</span>
             <span className="text-gray-500 text-xs">
-              ({dayjs(submission.submittedAt).fromNow()})
+              ({dayjs(formatVietnamTime(submission.submittedAt, "MMM D, YYYY HH:mm")).fromNow()})
             </span>
           </div>
         </Descriptions.Item>
@@ -199,7 +199,7 @@ export default function SubmissionHistoryView({
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span className="font-medium">Deadline:</span>
-              <span>{dayjs(history.deadline).format("MMM D, YYYY HH:mm")}</span>
+              <span>{formatVietnamTime(history.deadline, "MMM D, YYYY HH:mm")}</span>
               {isLate && <Tag color="orange">Late Submission</Tag>}
             </div>
             <div>

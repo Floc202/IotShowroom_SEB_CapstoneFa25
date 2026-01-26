@@ -66,6 +66,35 @@ export const uploadFinalSubmissionFile = (
     .then((r) => r.data);
 };
 
+export const updateFinalSubmissionFile = (
+  projectId: Id,
+  fileType: "report" | "presentation" | "sourcecode" | "video",
+  file: File
+) => {
+  const formData = new FormData();
+  
+  const fieldNames = {
+    report: "FinalReport",
+    presentation: "Presentation",
+    sourcecode: "SourceCode",
+    video: "VideoDemo",
+  };
+
+  formData.append(fieldNames[fileType], file);
+
+  return api
+    .put<ApiEnvelope<FinalSubmission>>(
+      `${BASE}/${projectId}/final-submission/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    )
+    .then((r) => r.data);
+};
+
 export const deleteFinalSubmissionFile = (
   projectId: Id,
   fileType: "report" | "presentation" | "sourcecode" | "video"

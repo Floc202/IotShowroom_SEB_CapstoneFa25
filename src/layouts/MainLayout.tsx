@@ -44,7 +44,6 @@ export default function MainLayout() {
   ];
 
   const onLogin = () => navigate("/login");
-  const onGetStarted = () => navigate("/register");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -97,12 +96,12 @@ export default function MainLayout() {
                 >
                   Sign In
                 </button>
-                <div
+                {/* <div
                   onClick={onGetStarted}
                   className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium cursor-pointer"
                 >
                   Get Started
-                </div>
+                </div> */}
               </div>
             ) : (
               <Dropdown menu={{ items }} trigger={["click"]}>

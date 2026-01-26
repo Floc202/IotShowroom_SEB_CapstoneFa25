@@ -366,7 +366,7 @@ export default function ProjectTemplates() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <FileText className="w-7 h-7" />
-            Project Templates
+            Project Topics
           </h1>
           <p className="text-gray-600">Manage project templates for your classes</p>
         </div>
@@ -401,7 +401,7 @@ export default function ProjectTemplates() {
               onClick={handleCreate}
               disabled={!selectedClassId}
             >
-              Create Template
+              Create Topic
             </Button>
           </Space>
 
@@ -427,7 +427,7 @@ export default function ProjectTemplates() {
       </Card>
 
       <Modal
-        title={formMode === "create" ? "Create Template" : "Edit Template"}
+        title={formMode === "create" ? "Create Topic" : "Edit Topic"}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         onOk={handleSubmit}

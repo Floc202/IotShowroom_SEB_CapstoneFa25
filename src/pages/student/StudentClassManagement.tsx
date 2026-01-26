@@ -26,8 +26,10 @@ export default function StudentClassManagement() {
         .slice()
         .sort((a, b) => dayjs(b.enrolledAt).valueOf() - dayjs(a.enrolledAt).valueOf());
       setClasses(sorted);
-    } catch (e) {
-      toast.error(getErrorMessage(e));
+    } catch (e: any) {
+      if (e?.response?.status !== 401) {
+        toast.error(getErrorMessage(e));
+      }
     } finally {
       setLoading(false);
     }

@@ -40,9 +40,9 @@ export default function InstructorGradingSubmissionView() {
   const [simulations, setSimulations] = useState<SimulationItem[]>([]);
   const [gradeModalVisible, setGradeModalVisible] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [hasSubmittedSimulations, setHasSubmittedSimulations] = useState(false);
   const [form] = Form.useForm();
   const [rubricScores, setRubricScores] = useState({
-    repository: 0,
     sourceCode: 0,
     finalReport: 0,
     presentation: 0,
@@ -50,11 +50,34 @@ export default function InstructorGradingSubmissionView() {
   });
 
   const rubricCriteria = [
-    { key: 'repository', name: 'Repository', maxScore: 100, weight: 0.2, description: 'GitHub/GitLab repository quality' },
-    { key: 'sourceCode', name: 'Source Code', maxScore: 100, weight: 0.25, description: 'Code quality and documentation' },
-    { key: 'finalReport', name: 'Final Report', maxScore: 100, weight: 0.25, description: 'Technical documentation' },
-    { key: 'presentation', name: 'Presentation', maxScore: 100, weight: 0.15, description: 'Presentation slides quality' },
-    { key: 'videoDemo', name: 'Video Demo', maxScore: 100, weight: 0.15, description: 'Video demonstration' },
+    {
+      key: "sourceCode",
+      name: "Source Code",
+      maxScore: 100,
+      weight: 0.3,
+      description: "Code quality and documentation",
+    },
+    {
+      key: "finalReport",
+      name: "Final Report",
+      maxScore: 100,
+      weight: 0.3,
+      description: "Technical documentation",
+    },
+    {
+      key: "presentation",
+      name: "Presentation",
+      maxScore: 100,
+      weight: 0.2,
+      description: "Presentation slides quality",
+    },
+    {
+      key: "videoDemo",
+      name: "Video Demo",
+      maxScore: 100,
+      weight: 0.2,
+      description: "Video demonstration",
+    },
   ];
 
   const calculateFinalGrade = () => {
@@ -76,6 +99,24 @@ export default function InstructorGradingSubmissionView() {
     );
   };
 
+  const getMissingItems = () => {
+    const missing: string[] = [];
+    if (!submissionDetail) return missing;
+    
+    if (!submissionDetail.repositoryUrl) missing.push("Repository URL");
+    if (!submissionDetail.sourceCodeUrl) missing.push("Source Code");
+    if (!submissionDetail.finalReportUrl) missing.push("Final Report");
+    if (!submissionDetail.presentationUrl) missing.push("Presentation");
+    if (!submissionDetail.videoDemoUrl) missing.push("Video Demo");
+    if (!hasSubmittedSimulations) missing.push("IoT Simulations");
+    
+    return missing;
+  };
+
+  const canGrade = () => {
+    return isAllDocumentsSubmitted() && hasSubmittedSimulations;
+  };
+
   useEffect(() => {
     window.scrollTo(0, 0);
     if (finalSubmissionId) {
@@ -95,13 +136,14 @@ export default function InstructorGradingSubmissionView() {
         try {
           const simRes = await getSimulationsByProject(res.data.projectId);
           if (simRes.data.isSuccess && simRes.data.data) {
-            setSimulations(
-              simRes.data.data.filter((sim) => sim.status === "submitted")
-            );
+            const submittedSims = simRes.data.data.filter((sim) => sim.status === "submitted");
+            setSimulations(submittedSims);
+            setHasSubmittedSimulations(submittedSims.length > 0);
           }
         } catch (e) {
           console.error("Failed to fetch simulations:", e);
           setSimulations([]);
+          setHasSubmittedSimulations(false);
         }
       }
     } catch (error: any) {
@@ -113,14 +155,14 @@ export default function InstructorGradingSubmissionView() {
   };
 
   const handleGrade = () => {
-    if (!isAllDocumentsSubmitted()) {
-      toast.error("Cannot submit grade. Student has not submitted all required documents.");
+    if (!canGrade()) {
+      const missing = getMissingItems();
+      toast.error(`Cannot grade submission. Missing: ${missing.join(", ")}`);
       return;
     }
     setGradeModalVisible(true);
     form.resetFields();
     setRubricScores({
-      repository: 0,
       sourceCode: 0,
       finalReport: 0,
       presentation: 0,
@@ -182,13 +224,17 @@ export default function InstructorGradingSubmissionView() {
           </div>
         </div>
         <Tooltip
-          title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
+          title={
+            !canGrade()
+              ? `Missing: ${getMissingItems().join(", ")}`
+              : ""
+          }
         >
           <Button
             type="primary"
             size="large"
             onClick={handleGrade}
-            disabled={!isAllDocumentsSubmitted()}
+            disabled={!canGrade()}
           >
             Submit Grade
           </Button>
@@ -227,37 +273,30 @@ export default function InstructorGradingSubmissionView() {
           dataSource={[
             {
               key: "1",
-              criteria: "Repository",
-              description: "GitHub/GitLab repository with complete source code",
-              weight: "20%",
-              file: submissionDetail.repositoryUrl,
-            },
-            {
-              key: "2",
               criteria: "Source Code",
               description: "Clean, well-documented, and functional code",
-              weight: "25%",
+              weight: "30%",
               file: submissionDetail.sourceCodeUrl,
             },
             {
-              key: "3",
+              key: "2",
               criteria: "Final Report",
               description: "Comprehensive documentation and technical report",
-              weight: "25%",
+              weight: "30%",
               file: submissionDetail.finalReportUrl,
             },
             {
-              key: "4",
+              key: "3",
               criteria: "Presentation",
               description: "Clear and professional project presentation slides",
-              weight: "15%",
+              weight: "20%",
               file: submissionDetail.presentationUrl,
             },
             {
-              key: "5",
+              key: "4",
               criteria: "Video Demo",
               description: "Working demonstration of the IoT system",
-              weight: "15%",
+              weight: "20%",
               file: submissionDetail.videoDemoUrl,
             },
           ]}
@@ -334,7 +373,7 @@ export default function InstructorGradingSubmissionView() {
                     <div className="text-xs text-gray-500">
                       Created:{" "}
                       {new Date(
-                        new Date(sim.createdAt).getTime() + 7 * 60 * 60 * 1000
+                        new Date(sim.createdAt).getTime() + 7 * 60 * 60 * 1000,
                       ).toLocaleString("en-GB", {
                         day: "2-digit",
                         month: "2-digit",
@@ -421,14 +460,15 @@ export default function InstructorGradingSubmissionView() {
         title={
           <div className="flex items-center gap-3">
             <Award className="w-5 h-5 text-purple-600" />
-            <span className="text-lg font-semibold">Submit Grade - Rubric Based Evaluation</span>
+            <span className="text-lg font-semibold">
+              Submit Grade - Rubric Based Evaluation
+            </span>
           </div>
         }
         open={gradeModalVisible}
         onCancel={() => {
           setGradeModalVisible(false);
           setRubricScores({
-            repository: 0,
             sourceCode: 0,
             finalReport: 0,
             presentation: 0,
@@ -450,10 +490,10 @@ export default function InstructorGradingSubmissionView() {
         style={{ top: 10 }}
       >
         <div className="space-y-6">
-          
-
           <div>
-            <h4 className="font-semibold mb-3 text-gray-700">Evaluation Rubric</h4>
+            <h4 className="font-semibold mb-3 text-gray-700">
+              Evaluation Rubric
+            </h4>
             <Table
               dataSource={rubricCriteria}
               rowKey="key"
@@ -462,45 +502,51 @@ export default function InstructorGradingSubmissionView() {
               size="middle"
               columns={[
                 {
-                  title: 'Criterion',
-                  dataIndex: 'name',
-                  key: 'name',
+                  title: "Criterion",
+                  dataIndex: "name",
+                  key: "name",
                   width: 150,
                   render: (text) => <span className="font-medium">{text}</span>,
                 },
                 {
-                  title: 'Description',
-                  dataIndex: 'description',
-                  key: 'description',
+                  title: "Description",
+                  dataIndex: "description",
+                  key: "description",
                   ellipsis: true,
                 },
                 {
-                  title: 'Weight',
-                  dataIndex: 'weight',
-                  key: 'weight',
+                  title: "Weight",
+                  dataIndex: "weight",
+                  key: "weight",
                   width: 100,
-                  align: 'center',
-                  render: (weight) => <Tag color="blue">{(weight * 100).toFixed(0)}%</Tag>,
+                  align: "center",
+                  render: (weight) => (
+                    <Tag color="blue">{(weight * 100).toFixed(0)}%</Tag>
+                  ),
                 },
                 {
-                  title: 'Max Score',
-                  dataIndex: 'maxScore',
-                  key: 'maxScore',
+                  title: "Max Score",
+                  dataIndex: "maxScore",
+                  key: "maxScore",
                   width: 100,
-                  align: 'center',
-                  render: (score) => <span className="font-semibold">{score}</span>,
+                  align: "center",
+                  render: (score) => (
+                    <span className="font-semibold">{score}</span>
+                  ),
                 },
                 {
-                  title: 'Score',
-                  key: 'score',
+                  title: "Score",
+                  key: "score",
                   width: 150,
-                  align: 'center',
+                  align: "center",
                   render: (_, record) => (
                     <InputNumber
                       min={0}
                       max={record.maxScore}
                       precision={1}
-                      value={rubricScores[record.key as keyof typeof rubricScores]}
+                      value={
+                        rubricScores[record.key as keyof typeof rubricScores]
+                      }
                       onChange={(value) => {
                         setRubricScores((prev) => ({
                           ...prev,
@@ -508,7 +554,7 @@ export default function InstructorGradingSubmissionView() {
                         }));
                       }}
                       placeholder="0"
-                      style={{ width: '100%' }}
+                      style={{ width: "100%" }}
                     />
                   ),
                 },
@@ -533,7 +579,9 @@ export default function InstructorGradingSubmissionView() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
-              <span className="text-gray-700 font-medium">Calculated Final Grade:</span>
+              <span className="text-gray-700 font-medium">
+                Calculated Final Grade:
+              </span>
               <Tag color="purple" className="text-xl font-bold px-4 py-1">
                 {calculateFinalGrade().toFixed(2)}/100
               </Tag>
@@ -552,8 +600,6 @@ export default function InstructorGradingSubmissionView() {
               />
             </Form.Item>
           </Form>
-
-         
         </div>
       </Modal>
     </div>

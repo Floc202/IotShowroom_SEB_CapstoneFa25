@@ -40,3 +40,29 @@ export interface Me {
   createdAt: string;
   updatedAt: string | null;
 }
+
+export interface SendOTPRequest {
+  email: string;
+}
+
+export interface SendOTPResponse {
+  email: string;
+  expiresAt: string;
+  message: string;
+}
+
+export interface VerifyOTPRequest {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyOTPResponse {
+  isValid: boolean;
+  message: string;
+}
+
+export interface ChangePasswordRequest {
+  email: string;
+  otp: string;
+  newPassword: string;
+}

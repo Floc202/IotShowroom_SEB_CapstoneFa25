@@ -265,13 +265,11 @@ export default function AdminReports() {
                   </Card>
                 </Col>
                 <Col xs={24} sm={8}>
-                  <Card>
+                 <Card>
                     <Statistic
-                      title="Participation Rate"
-                      value={studentsReport.groupParticipationRate}
-                      precision={1}
-                      suffix="%"
-                      prefix={<TrendingUp className="w-5 h-5" />}
+                      title="In Groups"
+                      value={studentsReport.studentsWithoutGroups}
+                      prefix={<Users className="w-5 h-5" />}
                       valueStyle={{ color: "#722ed1" }}
                     />
                   </Card>
@@ -346,11 +344,9 @@ export default function AdminReports() {
                 <Col xs={24} sm={6}>
                   <Card>
                     <Statistic
-                      title="Completion Rate"
-                      value={projectsReport.completionRate}
-                      precision={1}
-                      suffix="%"
-                      prefix={<TrendingUp className="w-5 h-5" />}
+                      title="Rejected"
+                      value={projectsReport.rejectedProjects}
+                      prefix={<FolderOpen className="w-5 h-5" />}
                       valueStyle={{ color: "#fa8c16" }}
                     />
                   </Card>

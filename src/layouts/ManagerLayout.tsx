@@ -78,12 +78,12 @@ export default function ManagerLayout() {
         { id: "/admin/semesters", icon: Calendar, label: "Semester Management" },
         { id: "/admin/classes", icon: BookOpen, label: "Classes" },
         { id: "/admin/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
-        {
-          id: "/notifications",
-          icon: MessageSquare,
-          label: "Notifications",
-          showBadge: true,
-        },
+        // {
+        //   id: "/notifications",
+        //   icon: MessageSquare,
+        //   label: "Notifications",
+        //   showBadge: true,
+        // },
         { id: "/admin/reports", icon: BarChart3, label: "Reports" },
       ];
     if (role === ROLES.INSTRUCTOR)

@@ -211,7 +211,6 @@ export default function ClassDetailPage() {
         }
 
         const file = fileList[0].originFileObj;
-        console.log("file: ", file);
         const res = await importStudentsToClass(Number(id), file);
 
         if (!res.isSuccess || !res.data) {
@@ -279,6 +278,7 @@ export default function ClassDetailPage() {
           } catch (e: any) {
             failCount++;
             console.error(`Failed to add student ${studentId}:`, e);
+            toast.error(e?.response?.data?.message || "Failed to add student");
           }
         }
 

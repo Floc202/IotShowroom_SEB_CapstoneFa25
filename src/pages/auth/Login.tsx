@@ -204,7 +204,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-blue-600 text-white cursor-pointer py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-blue-600 !text-white cursor-pointer py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Signing in..." : "Sign in"}
               </button>
@@ -249,12 +249,12 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-gray-600">
                 Don’t have an account?{" "}
-                <Link
+                {/* <Link
                   to="/register"
                   className="text-blue-600 hover:text-blue-700 font-semibold"
                 >
                   Sign up
-                </Link>
+                </Link> */}
               </p>
             </div>
           </div>
