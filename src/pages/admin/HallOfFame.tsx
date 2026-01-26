@@ -109,10 +109,10 @@ export default function HallOfFame() {
       render: (text: string | null) => <Tag color="blue">{text || "N/A"}</Tag>,
     },
     {
-      title: "Final Score",
+      title: "Main Instructor Score",
       dataIndex: "finalScore",
       key: "finalScore",
-      width: 120,
+      width: 200,
       render: (score: number | null) => (
         <Tag color={score && score >= 90 ? "green" : score && score >= 80 ? "blue" : "orange"} className="font-bold">
           {score?.toFixed(2) || "N/A"}
@@ -266,7 +266,7 @@ export default function HallOfFame() {
                       <Descriptions.Item label="Components">
                         <div className="whitespace-pre-wrap">{selectedProject.projectComponent}</div>
                       </Descriptions.Item>
-                      <Descriptions.Item label="Final Score">
+                      <Descriptions.Item label="Main Instructor Score">
                         <Tag color={selectedProject.finalScore >= 90 ? "green" : selectedProject.finalScore >= 80 ? "blue" : "orange"} className="font-bold text-lg">
                           {selectedProject.finalScore.toFixed(2)}
                         </Tag>
