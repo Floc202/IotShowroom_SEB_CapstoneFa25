@@ -13,7 +13,7 @@ import {
   Table,
   Tooltip,
 } from "antd";
-import { FileText, Download, Calendar, Award, User, AlertCircle } from "lucide-react";
+import { FileText, Download, Calendar, Award, User } from "lucide-react";
 import { getFinalSubmission } from "../../api/finalSubmission";
 import { submitFinalGrade } from "../../api/instructor";
 import { getSimulationsByProject } from "../../api/simulation";

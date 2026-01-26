@@ -1,7 +1,6 @@
 import { Modal, Button, Divider, Table, Empty, Card, Descriptions, Tag, Tooltip } from "antd";
 import { Award } from "lucide-react";
 import { formatVietnamTime } from "../../utils/helpers";
-import dayjs from "dayjs";
 
 interface MilestoneGrade {
   meId: number;

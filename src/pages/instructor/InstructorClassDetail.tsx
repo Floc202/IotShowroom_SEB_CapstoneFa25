@@ -1622,7 +1622,7 @@ export default function InstructorClassDetail() {
 
           {templateFormMode === "create" && (
             <Form.List name="milestones" initialValue={[]}>
-              {(fields, { add, remove }) => (
+              {(fields, { remove }) => (
                 <>
                   {/* <div className="flex justify-between items-center mb-2">
                     <span className="font-medium">Milestones</span>

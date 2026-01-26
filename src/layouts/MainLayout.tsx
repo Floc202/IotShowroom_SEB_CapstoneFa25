@@ -44,7 +44,6 @@ export default function MainLayout() {
   ];
 
   const onLogin = () => navigate("/login");
-  const onGetStarted = () => navigate("/register");
 
   return (
     <div className="min-h-screen flex flex-col">
