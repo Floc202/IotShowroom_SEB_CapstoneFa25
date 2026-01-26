@@ -31,8 +31,7 @@ import {
   updateFinalSubmissionFile,
 } from "../../api/finalSubmission";
 import toast from "react-hot-toast";
-import { getErrorMessage } from "../../utils/helpers";
-import dayjs from "dayjs";
+import { getErrorMessage, formatVietnamTime } from "../../utils/helpers";
 
 interface FinalSubmissionCardProps {
   projectId: number;
@@ -434,13 +433,13 @@ export default function FinalSubmissionCard({
             {submission.submittedByName}
           </Descriptions.Item>
           <Descriptions.Item label="Submitted At">
-            {dayjs(submission.submittedAt).format("DD/MM/YYYY HH:mm")}
+            {formatVietnamTime(submission.submittedAt, "DD/MM/YYYY HH:mm")}
           </Descriptions.Item>
           <Descriptions.Item label="Last Updated">
-            {dayjs(submission.lastUpdatedAt).format("DD/MM/YYYY HH:mm")}
+            {formatVietnamTime(submission.lastUpdatedAt, "DD/MM/YYYY HH:mm")}
           </Descriptions.Item>
           <Descriptions.Item label="Deadline">
-            {dayjs(submission.deadline).format("DD/MM/YYYY")}
+            {formatVietnamTime(submission.deadline, "DD/MM/YYYY")}
           </Descriptions.Item>
           <Descriptions.Item label="Repository URL" span={2}>
             <a
@@ -479,7 +478,7 @@ export default function FinalSubmissionCard({
                 </div>
                 {submission.gradedAt && (
                   <div className="text-xs text-gray-500 mt-1">
-                    {dayjs(submission.gradedAt).format("MMM D, YYYY")}
+                    {formatVietnamTime(submission.gradedAt, "MMM D, YYYY")}
                   </div>
                 )}
               </div>

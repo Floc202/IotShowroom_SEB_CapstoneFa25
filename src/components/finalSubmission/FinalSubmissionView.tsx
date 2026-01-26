@@ -13,14 +13,14 @@ import {
   Table,
   Tooltip,
 } from "antd";
-import { FileText, Download, Calendar, Award, User } from "lucide-react";
+import { FileText, Download, Calendar, Award, User, AlertCircle } from "lucide-react";
 import { getFinalSubmission } from "../../api/finalSubmission";
 import { submitFinalGrade } from "../../api/instructor";
+import { getSimulationsByProject } from "../../api/simulation";
 import type { FinalSubmission } from "../../types/finalSubmission";
 import type { Id } from "../../types/base";
 import toast from "react-hot-toast";
-import { getErrorMessage } from "../../utils/helpers";
-import dayjs from "dayjs";
+import { getErrorMessage, formatVietnamTime } from "../../utils/helpers";
 
 interface FinalSubmissionViewProps {
   projectId: Id;
@@ -35,9 +35,9 @@ export default function FinalSubmissionView({
   const [loading, setLoading] = useState(false);
   const [gradeModalOpen, setGradeModalOpen] = useState(false);
   const [grading, setGrading] = useState(false);
+  const [hasSubmittedSimulations, setHasSubmittedSimulations] = useState(false);
   const [form] = Form.useForm();
   const [rubricScores, setRubricScores] = useState({
-    repository: 0,
     sourceCode: 0,
     finalReport: 0,
     presentation: 0,
@@ -46,38 +46,31 @@ export default function FinalSubmissionView({
 
   const rubricCriteria = [
     {
-      key: "repository",
-      name: "Repository",
-      maxScore: 100,
-      weight: 0.2,
-      description: "GitHub/GitLab repository quality",
-    },
-    {
       key: "sourceCode",
       name: "Source Code",
       maxScore: 100,
-      weight: 0.25,
+      weight: 0.3,
       description: "Code quality and documentation",
     },
     {
       key: "finalReport",
       name: "Final Report",
       maxScore: 100,
-      weight: 0.25,
+      weight: 0.3,
       description: "Technical documentation",
     },
     {
       key: "presentation",
       name: "Presentation",
       maxScore: 100,
-      weight: 0.15,
+      weight: 0.2,
       description: "Presentation slides quality",
     },
     {
       key: "videoDemo",
       name: "Video Demo",
       maxScore: 100,
-      weight: 0.15,
+      weight: 0.2,
       description: "Video demonstration",
     },
   ];
@@ -101,8 +94,27 @@ export default function FinalSubmissionView({
     );
   };
 
+  const getMissingItems = () => {
+    const missing: string[] = [];
+    if (!submission) return missing;
+    
+    if (!submission.repositoryUrl) missing.push("Repository URL");
+    if (!submission.sourceCodeUrl) missing.push("Source Code");
+    if (!submission.finalReportUrl) missing.push("Final Report");
+    if (!submission.presentationUrl) missing.push("Presentation");
+    if (!submission.videoDemoUrl) missing.push("Video Demo");
+    if (!hasSubmittedSimulations) missing.push("IoT Simulations");
+    
+    return missing;
+  };
+
+  const canGrade = () => {
+    return isAllDocumentsSubmitted() && hasSubmittedSimulations;
+  };
+
   useEffect(() => {
     fetchSubmission();
+    fetchSimulations();
   }, [projectId]);
 
   const fetchSubmission = async () => {
@@ -119,6 +131,20 @@ export default function FinalSubmissionView({
       setSubmission(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSimulations = async () => {
+    try {
+      const res = await getSimulationsByProject(projectId);
+      if (res.data.isSuccess && res.data.data) {
+        const submittedSims = res.data.data.filter((sim: any) => sim.status === "submitted");
+        setHasSubmittedSimulations(submittedSims.length > 0);
+      } else {
+        setHasSubmittedSimulations(false);
+      }
+    } catch (e) {
+      setHasSubmittedSimulations(false);
     }
   };
 
@@ -145,7 +171,6 @@ export default function FinalSubmissionView({
       setGradeModalOpen(false);
       form.resetFields();
       setRubricScores({
-        repository: 0,
         sourceCode: 0,
         finalReport: 0,
         presentation: 0,
@@ -216,16 +241,21 @@ export default function FinalSubmissionView({
               </Tag>
               {role === "instructor" && !submission.grade && (
                 <Tooltip
-                  title={!isAllDocumentsSubmitted() ? "Student has not submitted all required documents" : ""}
+                  title={
+                    !canGrade()
+                      ? `Missing: ${getMissingItems().join(", ")}`
+                      : ""
+                  }
                 >
                   <Button
                     type="primary"
                     size="small"
                     icon={<Award className="w-4 h-4" />}
-                    disabled={!isAllDocumentsSubmitted()}
+                    disabled={!canGrade()}
                     onClick={() => {
-                      if (!isAllDocumentsSubmitted()) {
-                        toast.error("Cannot submit grade. Student has not submitted all required documents.");
+                      if (!canGrade()) {
+                        const missing = getMissingItems();
+                        toast.error(`Cannot grade submission. Missing: ${missing.join(", ")}`);
                         return;
                       }
                       form.setFieldsValue({
@@ -256,7 +286,7 @@ export default function FinalSubmissionView({
               <User className="w-4 h-4" />
               <span>{submission.submittedByName}</span>
               <span className="text-gray-500 text-xs">
-                on {dayjs(submission.submittedAt).format("MMM D, YYYY HH:mm")}
+                on {formatVietnamTime(submission.submittedAt, "MMM D, YYYY HH:mm")}
               </span>
             </div>
           </Descriptions.Item>
@@ -264,12 +294,12 @@ export default function FinalSubmissionView({
           <Descriptions.Item label="Deadline">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
-              {dayjs(submission.deadline).format("MMM D, YYYY HH:mm")}
+              {formatVietnamTime(submission.deadline, "MMM D, YYYY HH:mm")}
             </div>
           </Descriptions.Item>
 
           <Descriptions.Item label="Last Updated">
-            {dayjs(submission.lastUpdatedAt).format("MMM D, YYYY HH:mm")}
+            {formatVietnamTime(submission.lastUpdatedAt, "MMM D, YYYY HH:mm")}
           </Descriptions.Item>
 
           <Descriptions.Item label="Repository URL" span={2}>
@@ -354,7 +384,7 @@ export default function FinalSubmissionView({
             <div className="text-xs text-gray-500 mt-2">
               Graded by {submission.gradedByName} on{" "}
               {submission.gradedAt &&
-                dayjs(submission.gradedAt).format("MMM D, YYYY HH:mm")}
+                formatVietnamTime(submission.gradedAt, "MMM D, YYYY HH:mm")}
             </div>
           </div>
         )}
@@ -374,7 +404,6 @@ export default function FinalSubmissionView({
         onCancel={() => {
           setGradeModalOpen(false);
           setRubricScores({
-            repository: 0,
             sourceCode: 0,
             finalReport: 0,
             presentation: 0,
