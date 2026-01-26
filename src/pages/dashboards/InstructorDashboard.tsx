@@ -99,7 +99,7 @@ export default function InstructorDashboard() {
       </div>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card loading={loading}>
             <Statistic
               title="Total Classes"
@@ -109,17 +109,7 @@ export default function InstructorDashboard() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card loading={loading}>
-            <Statistic
-              title="Total Students"
-              value={dashboard?.totalStudents || 0}
-              prefix={<Users className="w-5 h-5" />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card loading={loading}>
             <Statistic
               title="Total Groups"
@@ -129,7 +119,7 @@ export default function InstructorDashboard() {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
+        <Col xs={24} sm={12} lg={8}>
           <Card loading={loading}>
             <Statistic
               title="Total Projects"

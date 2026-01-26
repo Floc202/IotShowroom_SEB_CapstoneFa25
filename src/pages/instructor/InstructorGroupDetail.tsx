@@ -83,6 +83,9 @@ export default function InstructorGroupDetail() {
     null
   );
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>("");
+  const [selectLeaderModalOpen, setSelectLeaderModalOpen] = useState(false);
+  const [targetMemberId, setTargetMemberId] = useState<number | null>(null);
+  const [newLeaderId, setNewLeaderId] = useState<number | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<UnassignedStudent[]>([]);
@@ -303,6 +306,45 @@ export default function InstructorGroupDetail() {
 
   const handleUpdateRole = async (userId: number, newRole: string) => {
     if (!groupId || !group) return;
+
+    const currentMember = group.members.find((m) => m.userId === userId);
+    if (!currentMember) return;
+
+    const currentRole = currentMember.roleInGroup;
+
+    if (currentRole === "Member" && newRole === "Leader") {
+      const existingLeader = group.members.find(
+        (m) => m.userId !== userId && m.roleInGroup === "Leader"
+      );
+      if (existingLeader) {
+        toast.error(
+          `Cannot change role: ${existingLeader.fullName} is already the Leader of this group`
+        );
+        return;
+      }
+    }
+
+    if (currentRole === "Leader" && newRole === "Member") {
+      const otherLeaders = group.members.filter(
+        (m) => m.userId !== userId && m.roleInGroup === "Leader"
+      );
+
+      if (otherLeaders.length === 0) {
+        const eligibleMembers = group.members.filter(
+          (m) => m.userId !== userId
+        );
+
+        if (eligibleMembers.length === 0) {
+          toast.error("Cannot demote: No other members to promote as Leader");
+          return;
+        }
+
+        setTargetMemberId(userId);
+        setSelectLeaderModalOpen(true);
+        return;
+      }
+    }
+
     try {
       const res = await updateMemberRole(parseInt(groupId), userId, {
         roleInGroup: newRole,
@@ -321,6 +363,47 @@ export default function InstructorGroupDetail() {
           m.userId === userId ? { ...m, roleInGroup: newRole } : m
         ),
       });
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+    }
+  };
+
+  const handleConfirmLeaderChange = async () => {
+    if (!groupId || !group || !targetMemberId || !newLeaderId) return;
+
+    try {
+      const promoteRes = await updateMemberRole(parseInt(groupId), newLeaderId, {
+        roleInGroup: "Leader",
+      });
+
+      if (!promoteRes.isSuccess) {
+        toast.error(promoteRes.message || "Failed to promote new Leader");
+        return;
+      }
+
+      const demoteRes = await updateMemberRole(parseInt(groupId), targetMemberId, {
+        roleInGroup: "Member",
+      });
+
+      if (!demoteRes.isSuccess) {
+        toast.error(demoteRes.message || "Failed to demote current Leader");
+        return;
+      }
+
+      toast.success("Leader changed successfully");
+
+      setGroup({
+        ...group,
+        members: group.members.map((m) => {
+          if (m.userId === newLeaderId) return { ...m, roleInGroup: "Leader" };
+          if (m.userId === targetMemberId) return { ...m, roleInGroup: "Member" };
+          return m;
+        }),
+      });
+
+      setSelectLeaderModalOpen(false);
+      setTargetMemberId(null);
+      setNewLeaderId(null);
     } catch (e) {
       toast.error(getErrorMessage(e));
     }
@@ -910,6 +993,54 @@ export default function InstructorGroupDetail() {
           }}
         />
       )}
+
+      <Modal
+        open={selectLeaderModalOpen}
+        title="Select New Leader"
+        onCancel={() => {
+          setSelectLeaderModalOpen(false);
+          setTargetMemberId(null);
+          setNewLeaderId(null);
+        }}
+        onOk={handleConfirmLeaderChange}
+        okText="Confirm"
+        okButtonProps={{ disabled: !newLeaderId }}
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            To ensure the group always has a Leader, please select a member to
+            become the new Leader before demoting the current Leader.
+          </p>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Select New Leader
+            </label>
+            <Select
+              placeholder="Choose a member to promote"
+              value={newLeaderId}
+              onChange={setNewLeaderId}
+              className="w-full"
+              size="large"
+            >
+              {group?.members
+                .filter((m) => m.userId !== targetMemberId)
+                .map((member) => (
+                  <Select.Option key={member.userId} value={member.userId}>
+                    <div className="flex items-center gap-2">
+                      <Avatar size={24} src={member.avatarUrl}>
+                        {member.fullName[0]}
+                      </Avatar>
+                      <span>{member.fullName}</span>
+                      <span className="text-xs text-gray-500">
+                        ({member.email})
+                      </span>
+                    </div>
+                  </Select.Option>
+                ))}
+            </Select>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

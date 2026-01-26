@@ -127,7 +127,7 @@ export default function ProjectTemplateModal({
 
   return (
     <Modal
-      title="Project Templates"
+      title="Project Topics"
       open={open}
       onCancel={onClose}
       footer={null}
@@ -136,7 +136,7 @@ export default function ProjectTemplateModal({
     >
       <Spin spinning={loading}>
         {templates.length === 0 ? (
-          <Empty description="No project templates available" />
+          <Empty description="No project topics available" />
         ) : (
           <div className="space-y-4">
             {templates.map((template) => (

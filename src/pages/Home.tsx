@@ -108,11 +108,11 @@ const Home = () => {
               Built for FPTU's academic excellence.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div 
+              {/* <div 
                 className="px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-semibold text-lg flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30"
               >
                 Get Started <ArrowRight className="w-5 h-5" />
-              </div>
+              </div> */}
               <div 
                 onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' })}
                 className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-xl hover:border-blue-600 hover:text-blue-600 transition-all font-semibold text-lg"
