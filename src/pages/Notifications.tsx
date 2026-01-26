@@ -285,6 +285,16 @@ export default function NotificationsPage() {
         navigate("/instructor/grading");
         break;
       case "final_submission":
+        if (notification.message.includes("is ready for grading")) {
+          navigate("/instructor/grading");
+        } else if (parsedData?.classId && parsedData?.groupId) {
+          navigate(
+            `/instructor/classes/${parsedData.classId}/groups/${parsedData.groupId}`,
+          );
+        } else {
+          navigate("/instructor/classes");
+        }
+        break;
       case "project_submitted":
       case "milestone_weight_warning":
         if (parsedData?.classId && parsedData?.groupId) {
