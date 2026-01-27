@@ -50,3 +50,10 @@ export const getProjectStatusHistory = async (projectId: Id) =>
       `${BASE}/${projectId}/status-history`
     )
     .then((r) => r.data);
+
+export const getProjectsBySemester = async (semesterId: Id) =>
+  api
+    .get<ApiEnvelope<import("../types/project").SemesterProjectsResponse>>(
+      `${BASE}/semester/${semesterId}`
+    )
+    .then((r) => r.data);

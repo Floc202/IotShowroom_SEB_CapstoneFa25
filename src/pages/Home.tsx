@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowRight,
   CheckCircle,
@@ -12,86 +12,120 @@ import {
   BarChart3,
   Search,
   Play,
-  Trophy,
+  Cpu,
+  Radio,
   FolderOpen,
-  BookOpen,
 } from 'lucide-react';
+import { getProjectsBySemester } from '../api/project';
+import { listSemesters } from '../api/semesters';
+import type { SemesterProjectDetail } from '../types/project';
+import type { Semester } from '../types/semesters';
+import ProjectCard from '../components/project/ProjectCard';
+import { getErrorMessage } from '../utils/helpers';
+import toast from 'react-hot-toast';
 
 const Home = () => {
   const [activeRole, setActiveRole] = useState<'admin' | 'instructor' | 'student'>('student');
   const [searchTerm, setSearchTerm] = useState('');
   const [semesterFilter, setSemesterFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Array<SemesterProjectDetail & { semesterId: number }>>([]);
+  const [semesters, setSemesters] = useState<Semester[]>([]);
 
-  const featuredProjects = [
-    {
-      id: '1',
-      thumbnail: '🏠',
-      title: 'Smart Home Automation',
-      team: 'IoT Innovators',
-      class: 'SE1718',
-      semester: 'Fall 2025',
-      instructor: 'Dr. Nguyen Van Minh',
-      score: 9.5,
-      badges: ['Live Demo', 'Hall of Fame'],
-      tags: ['ESP32', 'MQTT', 'Voice Control'],
-    },
-    {
-      id: '2',
-      thumbnail: '🏥',
-      title: 'Healthcare Monitoring System',
-      team: 'Health Tech',
-      class: 'SE1718',
-      semester: 'Fall 2025',
-      instructor: 'Dr. Nguyen Van Minh',
-      score: 9.2,
-      badges: ['Live Demo'],
-      tags: ['Arduino', 'Cloud', 'Real-time'],
-    },
-    {
-      id: '3',
-      thumbnail: '🚗',
-      title: 'Smart Parking Management',
-      team: 'Park Smart',
-      class: 'SE1620',
-      semester: 'Spring 2025',
-      instructor: 'Dr. Tran Van Hung',
-      score: 9.0,
-      badges: ['Hall of Fame'],
-      tags: ['Raspberry Pi', 'Computer Vision'],
-    },
-    {
-      id: '4',
-      thumbnail: '🌾',
-      title: 'Agricultural Monitoring',
-      team: 'Green IoT',
-      class: 'SE1718',
-      semester: 'Fall 2025',
-      instructor: 'Dr. Nguyen Van Minh',
-      score: 8.8,
-      badges: ['Live Demo'],
-      tags: ['Sensors', 'LoRa', 'Analytics'],
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const semestersRes = await listSemesters();
+        if (semestersRes.isSuccess && semestersRes.data) {
+          setSemesters(semestersRes.data);
+          
+          const projectPromises = semestersRes.data.map(semester => 
+            getProjectsBySemester(semester.semesterId).then(res => ({
+              semesterId: semester.semesterId,
+              response: res
+            }))
+          );
+          
+          const projectResponses = await Promise.all(projectPromises);
+          const allProjects: Array<SemesterProjectDetail & { semesterId: number }> = [];
+          
+          projectResponses.forEach(({ semesterId, response }) => {
+            if (response.isSuccess && response.data) {
+              response.data.projects.forEach(project => {
+                allProjects.push({ ...project, semesterId });
+              });
+            }
+          });
+          
+          setProjects(allProjects);
+        }
+      } catch (e) {
+        toast.error(getErrorMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.groupName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSemester =
+      semesterFilter === 'all' ||
+      project.semesterId.toString() === semesterFilter;
+    const isApprovedAndGraded = 
+      project.status.toLowerCase() === 'approved' && 
+      project.finalSubmission?.instructorGrade !== null && 
+      project.finalSubmission?.instructorGrade !== undefined;
+    return matchesSearch && matchesSemester && isApprovedAndGraded;
+  });
 
   const stats = [
-    { label: 'Projects This Semester', value: '156', icon: FolderOpen, color: 'from-blue-500 to-blue-600' },
-    { label: 'Active Classes', value: '12', icon: BookOpen, color: 'from-emerald-500 to-emerald-600' },
-    { label: 'Live Demos Today', value: '8', icon: Wifi, color: 'from-purple-500 to-purple-600' },
-    { label: 'Total Archived Projects', value: '1,234', icon: Database, color: 'from-orange-500 to-orange-600' },
+    {
+      label: 'IoT Projects',
+      value: filteredProjects.length.toString(),
+      icon: Cpu,
+      color: 'from-blue-500 to-blue-600',
+    },
+    {
+      label: 'Active Classes',
+      value: new Set(filteredProjects.map((p) => p.classId)).size.toString(),
+      icon: GraduationCap,
+      color: 'from-emerald-500 to-emerald-600',
+    },
+    {
+      label: 'Live Demos',
+      value: filteredProjects.filter((p) => p.simulations.length > 0).length.toString(),
+      icon: Radio,
+      color: 'from-purple-500 to-purple-600',
+    },
+    {
+      label: 'Connected Devices',
+      value: filteredProjects.reduce((acc, p) => acc + p.simulations.length, 0).toString(),
+      icon: Wifi,
+      color: 'from-amber-500 to-amber-600',
+    },
   ];
 
-  const leaderboard = [
-    { rank: 1, project: 'Smart Home Automation', score: 9.5, instructor: 'Dr. Nguyen', class: 'SE1718' },
-    { rank: 2, project: 'Healthcare Monitoring', score: 9.2, instructor: 'Dr. Nguyen', class: 'SE1718' },
-    { rank: 3, project: 'Smart Parking Management', score: 9.0, instructor: 'Dr. Tran', class: 'SE1620' },
-  ];
-
-  const filteredProjects = featuredProjects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.team.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSemester = semesterFilter === 'all' || project.semester === semesterFilter;
-    return matchesSearch && matchesSemester;
-  });
+  const leaderboard = filteredProjects
+    .filter((p) => p.finalSubmission?.instructorGrade)
+    .sort((a, b) => {
+      const gradeA = a.finalSubmission?.instructorGrade || 0;
+      const gradeB = b.finalSubmission?.instructorGrade || 0;
+      return gradeB - gradeA;
+    })
+    .slice(0, 3)
+    .map((p, index) => ({
+      rank: index + 1,
+      project: p.title,
+      score: p.finalSubmission?.instructorGrade || 0,
+      instructor: p.instructorName,
+      class: p.className,
+    }));
 
   return (
     <div className="min-h-screen bg-white">      
@@ -387,71 +421,39 @@ const Home = () => {
                 className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Semesters</option>
-                <option value="Fall 2025">Fall 2025</option>
-                <option value="Spring 2025">Spring 2025</option>
-                <option value="Summer 2025">Summer 2025</option>
+                {semesters.map((semester) => (
+                  <option key={semester.semesterId} value={semester.semesterId}>
+                    {semester.name}
+                  </option>
+                ))}
               </select>
-              <div className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap">
-                Apply Filters
-              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProjects.map(project => (
-              <div key={project.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all group">
-                <div className="bg-gradient-to-br from-blue-100 to-emerald-100 h-48 flex items-center justify-center text-6xl">
-                  {project.thumbnail}
-                </div>
-                <div className="p-5">
-                  <div className="flex gap-2 mb-3">
-                    {project.badges.map((badge, i) => (
-                      <span key={i} className={`text-xs px-2 py-1 rounded-full font-medium ${
-                        badge === 'Live Demo' 
-                          ? 'bg-emerald-100 text-emerald-700 flex items-center gap-1' 
-                          : 'bg-yellow-100 text-yellow-700 flex items-center gap-1'
-                      }`}>
-                        {badge === 'Live Demo' && <Zap className="w-3 h-3" />}
-                        {badge === 'Hall of Fame' && <Trophy className="w-3 h-3" />}
-                        {badge}
-                      </span>
-                    ))}
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">{project.team}</p>
-                  <div className="space-y-1 text-xs text-gray-500 mb-3">
-                    <div>{project.class} • {project.semester}</div>
-                    <div>{project.instructor}</div>
-                  </div>
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4 text-emerald-600" />
-                      <span className="font-bold text-gray-900">{project.score}</span>
-                      <span className="text-gray-500 text-sm">/10</span>
-                    </div>
-                    <div className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1">
-                      View <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {project.tags.map((tag, i) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-gray-600 font-medium">Loading projects...</p>
               </div>
-            ))}
-          </div>
-
-          {filteredProjects.length === 0 && (
-            <div className="text-center py-16">
-              <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">No projects match your filters. Try adjusting your search.</p>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredProjects.map((project) => (
+                  <ProjectCard key={project.projectId} project={project} />
+                ))}
+              </div>
+
+              {filteredProjects.length === 0 && (
+                <div className="text-center py-16">
+                  <FolderOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    No projects match your filters. Try adjusting your search.
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

@@ -12,8 +12,15 @@ export interface ProjectDetail {
   groupName: string;
   createdAt: string;
   updatedAt: string | null;
-  memberCount: number;
-  members: string[];
+  memberCount?: number;
+  members: GroupMemberInfo[] | string[];
+  classId?: Id;
+  className?: string;
+  instructorName?: string;
+  simulations?: SimulationInfo[];
+  finalSubmission?: FinalSubmissionInfo | null;
+  graderGrades?: GraderGrade[];
+  averageGraderGrade?: number | null;
 }
 
 export interface MemberInfo {
@@ -53,4 +60,79 @@ export interface ProjectStatusHistory {
   reviewerId: Id;
   reviewerName: string;
   reviewedAt: string;
+}
+
+export interface GroupMemberInfo {
+  userId: Id;
+  fullName: string;
+  email: string;
+  studentCode: string | null;
+  roleInGroup: string;
+}
+
+export interface SimulationInfo {
+  simulationId: Id;
+  title: string;
+  description: string;
+  wokwiProjectUrl: string;
+  wokwiProjectId: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinalSubmissionInfo {
+  finalSubmissionId: Id;
+  finalReportUrl: string;
+  presentationUrl: string;
+  sourceCodeUrl: string;
+  videoDemoUrl: string;
+  repositoryUrl: string;
+  submissionNotes: string;
+  submittedAt: string;
+  lastUpdatedAt: string;
+  instructorGrade: number | null;
+  instructorFeedback: string | null;
+  gradedByInstructorName: string | null;
+  instructorGradedAt: string | null;
+}
+
+export interface GraderGrade {
+  gradeId: Id;
+  instructorId: Id;
+  instructorName: string;
+  instructorEmail: string;
+  grade: number;
+  feedback: string;
+  gradedAt: string;
+}
+
+export interface SemesterProjectDetail {
+  projectId: Id;
+  title: string;
+  description: string;
+  component: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string | null;
+  groupId: Id;
+  groupName: string;
+  leaderId: Id;
+  leaderName: string;
+  members: GroupMemberInfo[];
+  classId: Id;
+  className: string;
+  instructorName: string;
+  simulations: SimulationInfo[];
+  finalSubmission: FinalSubmissionInfo | null;
+  graderGrades: GraderGrade[];
+  averageGraderGrade: number | null;
+}
+
+export interface SemesterProjectsResponse {
+  semesterId: Id;
+  semesterName: string;
+  semesterCode: string;
+  totalProjects: number;
+  projects: SemesterProjectDetail[];
 }
