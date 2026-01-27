@@ -75,7 +75,11 @@ export default function ManagerLayout() {
       return [
         { id: "/admin/dashboard", icon: Home, label: "Dashboard" },
         { id: "/admin/users", icon: Users, label: "User Management" },
-        { id: "/admin/semesters", icon: Calendar, label: "Semester Management" },
+        {
+          id: "/admin/semesters",
+          icon: Calendar,
+          label: "Semester Management",
+        },
         { id: "/admin/classes", icon: BookOpen, label: "Classes" },
         { id: "/admin/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         // {
@@ -97,6 +101,7 @@ export default function ManagerLayout() {
           label: "Notifications",
           showBadge: true,
         },
+        { id: "/instructor/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
     if (role === ROLES.STUDENT)
@@ -109,6 +114,7 @@ export default function ManagerLayout() {
           label: "Notifications",
           showBadge: true,
         },
+        { id: "/student/hall-of-fame", icon: Trophy, label: "Hall of Fame" },
         { id: "/profile", icon: UserIcon, label: "Profile" },
       ];
     return [{ id: "/", icon: Home, label: "Dashboard" }];

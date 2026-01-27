@@ -32,6 +32,7 @@ import InstructorSimulationView from "./pages/instructor/InstructorSimulationVie
 import GradingManagement from "./pages/instructor/GradingManagement";
 import InstructorGradingSubmissionView from "./pages/instructor/InstructorGradingSubmissionView";
 import Notifications from "./pages/Notifications";
+import ProjectDetailPage from "./pages/projects/ProjectDetailPage";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
 
               <Route element={<PublicOnlyRoute />}>
@@ -52,13 +54,35 @@ export default function App() {
 
             <Route element={<ProtectedRoute allow={[ROLES.INSTRUCTOR]} />}>
               <Route element={<ManagerLayout />}>
-                <Route path="/instructor/dashboard" element={<InstructorDashboard />} />
-                <Route path="/instructor/classes" element={<InstructorClasses />} />
-                <Route path="/instructor/classes/:id" element={<InstructorClassDetail />} />
-                <Route path="/instructor/classes/:classId/groups/:groupId" element={<InstructorGroupDetail />} />
-                <Route path="/instructor/classes/:classId/groups/:groupId/simulation" element={<InstructorSimulationView />} />
-                <Route path="/instructor/grading" element={<GradingManagement />} />
-                <Route path="/instructor/grading/submission" element={<InstructorGradingSubmissionView />} />
+                <Route
+                  path="/instructor/dashboard"
+                  element={<InstructorDashboard />}
+                />
+                <Route
+                  path="/instructor/classes"
+                  element={<InstructorClasses />}
+                />
+                <Route
+                  path="/instructor/classes/:id"
+                  element={<InstructorClassDetail />}
+                />
+                <Route
+                  path="/instructor/classes/:classId/groups/:groupId"
+                  element={<InstructorGroupDetail />}
+                />
+                <Route
+                  path="/instructor/classes/:classId/groups/:groupId/simulation"
+                  element={<InstructorSimulationView />}
+                />
+                <Route
+                  path="/instructor/grading"
+                  element={<GradingManagement />}
+                />
+                <Route
+                  path="/instructor/grading/submission"
+                  element={<InstructorGradingSubmissionView />}
+                />
+                <Route path="/instructor/hall-of-fame" element={<HallOfFame />} />
               </Route>
             </Route>
 
@@ -80,9 +104,7 @@ export default function App() {
                   path="/student/classes/:id/simulation"
                   element={<StudentSimulation />}
                 />
-
-               
-                
+                <Route path="/student/hall-of-fame" element={<HallOfFame />} />
               </Route>
             </Route>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, Statistic, Row, Col, List, Tag, Empty, Spin, Typography } from "antd";
 import { BookOpen, Users, FolderOpen, AlertCircle, CheckCircle, Activity } from 'lucide-react';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
 import { getAdminOverview, getAdminStatistics, getClassesBySemesterChart, getProjectDistributionChart, getMilestoneCompletionChart } from "../../api/admin";
 import type { AdminOverview, AdminStatistics, ChartResponse } from "../../types/admin";
 import toast from "react-hot-toast";
@@ -163,7 +163,23 @@ export default function Dashboard() {
                 <XAxis dataKey="label" />
                 <YAxis />
                 <Tooltip />
-                <Legend />
+                <Legend 
+                  content={() => {
+                    return (
+                      <div className="flex justify-center gap-4 mt-2 flex-wrap">
+                        {classesBySemester?.chartData.map((entry, index) => (
+                          <div key={`legend-${index}`} className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded" 
+                              style={{ backgroundColor: entry.color || "#1890ff" }}
+                            />
+                            <span className="text-sm text-gray-600">{entry.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }}
+                />
                 <Bar dataKey="value" fill="#1890ff">
                   {classesBySemester?.chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color || "#1890ff"} />
@@ -186,6 +202,7 @@ export default function Dashboard() {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  nameKey="label"
                 >
                   {projectDistribution?.chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color || "#8884d8"} />
@@ -200,19 +217,66 @@ export default function Dashboard() {
       </Row>
 
       <Card title={milestoneCompletion?.title || "Milestone Completion"}>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={milestoneCompletion?.chartData || []}>
+        <ResponsiveContainer width="100%" height={350}>
+          <BarChart 
+            data={milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : []}
+            layout="vertical"
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="label" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="value" stroke="#1890ff" strokeWidth={2}>
-              {milestoneCompletion?.chartData.map((entry, index) => (
+            <XAxis type="number" />
+            <YAxis 
+              dataKey="label" 
+              type="category"
+              width={280}
+              tick={{ fontSize: 12 }}
+            />
+            <Tooltip 
+              content={(props) => {
+                const { active, payload } = props;
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload;
+                  return (
+                    <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+                      <p className="font-semibold text-gray-900 mb-2">{data.label}</p>
+                      <p className="text-sm text-gray-600">
+                        Total Submissions: <span className="font-medium text-gray-900">{data.value}</span>
+                      </p>
+                      {data.additionalData?.CompletionRate !== undefined && (
+                        <p className="text-sm text-gray-600">
+                          Completion Rate: <span className="font-medium text-green-600">{data.additionalData.CompletionRate}%</span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            <Legend 
+              content={() => {
+                const latestData = milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : [];
+                return (
+                  <div className="flex justify-center gap-4 mt-4 flex-wrap">
+                    {latestData.map((entry, index) => (
+                      <div key={`legend-${index}`} className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded" 
+                          style={{ backgroundColor: entry.color || "#1890ff" }}
+                        />
+                        <span className="text-sm text-gray-600">{entry.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }}
+            />
+            <Bar dataKey="value" name="Submissions" radius={[0, 8, 8, 0]}>
+              {(milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : []).map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color || "#1890ff"} />
               ))}
-            </Line>
-          </LineChart>
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </Card>
 

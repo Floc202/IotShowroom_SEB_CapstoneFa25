@@ -199,7 +199,7 @@ export default function HallOfFame() {
               <Col xs={24} sm={8}>
                 <Card>
                   <Statistic
-                    title="Total Projects"
+                    title="Total Projects In Semester"
                     value={leaderboard.totalProjects}
                     prefix={<Award className="w-5 h-5" />}
                     valueStyle={{ color: "#fa8c16" }}
