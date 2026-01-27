@@ -38,6 +38,7 @@ import {
   removeMemberFromGroup,
   updateMemberRole,
   getUnassignedStudents,
+  getInstructorClasses,
 } from "../../api/instructor";
 import { getProjectByGroup } from "../../api/project";
 import { updateProjectStatus } from "../../api/project";
@@ -74,6 +75,7 @@ export default function InstructorGroupDetail() {
     Record<number, SimulationItem[]>
   >({});
   const [loading, setLoading] = useState(false);
+  const [classStatus, setClassStatus] = useState<"Not Started" | "In Progress" | "Completed" | undefined>();
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [addMemberModalOpen, setAddMemberModalOpen] = useState(false);
@@ -106,7 +108,18 @@ export default function InstructorGroupDetail() {
         try {
           setLoading(true);
 
-          const groupData = await getClassGroups(cId);
+          const [groupData, classesRes] = await Promise.all([
+            getClassGroups(cId),
+            getInstructorClasses(),
+          ]);
+
+          if (classesRes.isSuccess && classesRes.data) {
+            const currentClass = classesRes.data.find((c) => c.classId === cId);
+            if (currentClass) {
+              setClassStatus(currentClass.status);
+            }
+          }
+
           const foundGroup = groupData.data?.find((g) => g.groupId === gId);
 
           if (foundGroup) {
@@ -467,34 +480,41 @@ export default function InstructorGroupDetail() {
       dataIndex: "roleInGroup",
       key: "roleInGroup",
       width: 150,
-      render: (role: string, record: InstructorGroupMember) => (
-        <Select
-          value={role}
-          style={{ width: 120 }}
-          onChange={(value) => handleUpdateRole(record.userId, value)}
-          options={[
-            { label: "Leader", value: "Leader" },
-            { label: "Member", value: "Member" },
-          ]}
-        />
-      ),
+      render: (role: string, record: InstructorGroupMember) =>
+        classStatus !== "Completed" ? (
+          <Select
+            value={role}
+            style={{ width: 120 }}
+            onChange={(value) => handleUpdateRole(record.userId, value)}
+            options={[
+              { label: "Leader", value: "Leader" },
+              { label: "Member", value: "Member" },
+            ]}
+          />
+        ) : (
+          <Tag color={role === "Leader" ? "blue" : "default"}>{role}</Tag>
+        ),
     },
-    {
-      title: "Action",
-      key: "action",
-      width: 100,
-      render: (_: any, record: InstructorGroupMember) => (
-        <Popconfirm
-          title="Remove this member?"
-          description={`Remove ${record.fullName}?`}
-          onConfirm={() => handleRemoveMember(record.userId)}
-        >
-          <Button danger size="small" icon={<UserMinus className="w-4 h-4" />}>
-            Remove
-          </Button>
-        </Popconfirm>
-      ),
-    },
+    ...(classStatus !== "Completed"
+      ? [
+          {
+            title: "Action",
+            key: "action",
+            width: 100,
+            render: (_: any, record: InstructorGroupMember) => (
+              <Popconfirm
+                title="Remove this member?"
+                description={`Remove ${record.fullName}?`}
+                onConfirm={() => handleRemoveMember(record.userId)}
+              >
+                <Button danger size="small" icon={<UserMinus className="w-4 h-4" />}>
+                  Remove
+                </Button>
+              </Popconfirm>
+            ),
+          },
+        ]
+      : []),
   ];
 
   const getStatusColor = (status: string) => {
@@ -543,20 +563,22 @@ export default function InstructorGroupDetail() {
           </div>
         }
         extra={
-          <Button
-            icon={<Pencil className="w-4 h-4" />}
-            onClick={() => {
-              if (group) {
-                editForm.setFieldsValue({
-                  groupName: group.groupName,
-                  description: group.description || "",
-                });
-              }
-              setEditModalOpen(true);
-            }}
-          >
-            Edit Group
-          </Button>
+          classStatus !== "Completed" && (
+            <Button
+              icon={<Pencil className="w-4 h-4" />}
+              onClick={() => {
+                if (group) {
+                  editForm.setFieldsValue({
+                    groupName: group.groupName,
+                    description: group.description || "",
+                  });
+                }
+                setEditModalOpen(true);
+              }}
+            >
+              Edit Group
+            </Button>
+          )
         }
       >
         <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }}>
@@ -596,13 +618,15 @@ export default function InstructorGroupDetail() {
         loading={loading}
         title="Group Members"
         extra={
-          <Button
-            type="primary"
-            icon={<UserPlus className="w-4 h-4" />}
-            onClick={() => setAddMemberModalOpen(true)}
-          >
-            Add Member
-          </Button>
+          classStatus !== "Completed" && (
+            <Button
+              type="primary"
+              icon={<UserPlus className="w-4 h-4" />}
+              onClick={() => setAddMemberModalOpen(true)}
+            >
+              Add Member
+            </Button>
+          )
         }
       >
         <Table<InstructorGroupMember>
@@ -645,7 +669,7 @@ export default function InstructorGroupDetail() {
                       >
                         History
                       </Button>
-                      {project.status.toLowerCase() !== "approved" && (
+                      {project.status.toLowerCase() !== "approved" && classStatus !== "Completed" && (
                         <Button
                           type="primary"
                           size="small"
@@ -719,7 +743,7 @@ export default function InstructorGroupDetail() {
                   </span>
                 </Divider>
 
-                <InstructorMilestones projectId={project.projectId} />
+                <InstructorMilestones projectId={project.projectId} classStatus={classStatus} />
 
                 <Divider orientation="left" className="mt-6 mb-4">
                   <span className="text-sm font-medium text-gray-600">

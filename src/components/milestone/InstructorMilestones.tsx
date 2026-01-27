@@ -36,10 +36,12 @@ import type { SubmissionHistory } from "../../types/submission";
 
 interface InstructorMilestonesProps {
   projectId: Id;
+  classStatus?: "Not Started" | "In Progress" | "Completed";
 }
 
 export default function InstructorMilestones({
   projectId,
+  classStatus,
 }: InstructorMilestonesProps) {
   const { user } = useAuth();
   const [milestones, setMilestones] = useState<Milestone[]>([]);
@@ -409,29 +411,31 @@ export default function InstructorMilestones({
             icon: <Award className="w-4 h-4" />,
             onClick: () => handleOpenGradeModal(record),
           }] : []),
-          {
-            key: "edit",
-            label: "Edit",
-            icon: <Pencil className="w-4 h-4" />,
-            onClick: () => handleOpenModal(record),
-          },
-          {
-            key: "delete",
-            label: (
-              <Popconfirm
-                title="Delete milestone?"
-                description="Are you sure you want to delete this milestone?"
-                onConfirm={() => handleDelete(record.milestoneId)}
-                okText="Delete"
-                cancelText="Cancel"
-                okButtonProps={{ danger: true }}
-              >
-                <span className="text-red-500">Delete</span>
-              </Popconfirm>
-            ),
-            icon: <Trash2 className="w-4 h-4" />,
-            danger: true,
-          },
+          ...(classStatus !== "Completed" ? [
+            {
+              key: "edit",
+              label: "Edit",
+              icon: <Pencil className="w-4 h-4" />,
+              onClick: () => handleOpenModal(record),
+            },
+            {
+              key: "delete",
+              label: (
+                <Popconfirm
+                  title="Delete milestone?"
+                  description="Are you sure you want to delete this milestone?"
+                  onConfirm={() => handleDelete(record.milestoneId)}
+                  okText="Delete"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                >
+                  <span className="text-red-500">Delete</span>
+                </Popconfirm>
+              ),
+              icon: <Trash2 className="w-4 h-4" />,
+              danger: true,
+            },
+          ] : []),
         ];
 
         return (
@@ -455,13 +459,15 @@ export default function InstructorMilestones({
           <span className="font-medium text-lg">Milestones</span>
           <Tag color="purple">{milestones.length}</Tag>
         </div>
-        <Button
-          type="primary"
-          icon={<Plus className="w-4 h-4" />}
-          onClick={() => handleOpenModal()}
-        >
-          Add Milestone
-        </Button>
+        {classStatus !== "Completed" && (
+          <Button
+            type="primary"
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => handleOpenModal()}
+          >
+            Add Milestone
+          </Button>
+        )}
       </div>
 
       {milestones.length > 0 ? (

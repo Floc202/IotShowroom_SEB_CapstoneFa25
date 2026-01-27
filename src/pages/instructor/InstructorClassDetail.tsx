@@ -616,40 +616,44 @@ export default function InstructorClassDetail() {
           >
             View
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<Pencil className="w-4 h-4" />}
-            onClick={() => handleEditTemplate(record)}
-          >
-            Edit
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<Users className="w-4 h-4" />}
-            onClick={() => handleViewTemplateRegistrations(record)}
-          >
-            Registrations
-          </Button>
+          {classData?.status !== "Completed" && (
+            <>
+              <Button
+                type="link"
+                size="small"
+                icon={<Pencil className="w-4 h-4" />}
+                onClick={() => handleEditTemplate(record)}
+              >
+                Edit
+              </Button>
+              <Button
+                type="link"
+                size="small"
+                icon={<Users className="w-4 h-4" />}
+                onClick={() => handleViewTemplateRegistrations(record)}
+              >
+                Registrations
+              </Button>
 
-          <Popconfirm
-            title="Delete Template"
-            description="Are you sure you want to delete this template?"
-            onConfirm={() => handleDeleteTemplate(record.templateId)}
-            okText="Delete"
-            okType="danger"
-            cancelText="Cancel"
-          >
-            <Button
-              type="link"
-              danger
-              size="small"
-              icon={<Trash2 className="w-4 h-4" />}
-            >
-              Delete
-            </Button>
-          </Popconfirm>
+              <Popconfirm
+                title="Delete Template"
+                description="Are you sure you want to delete this template?"
+                onConfirm={() => handleDeleteTemplate(record.templateId)}
+                okText="Delete"
+                okType="danger"
+                cancelText="Cancel"
+              >
+                <Button
+                  type="link"
+                  danger
+                  size="small"
+                  icon={<Trash2 className="w-4 h-4" />}
+                >
+                  Delete
+                </Button>
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },
@@ -774,16 +778,18 @@ export default function InstructorClassDetail() {
                 loading={loading}
                 title="Class Groups"
                 extra={
-                  <Button
-                    type="default"
-                    icon={<Plus className="w-4 h-4" />}
-                    onClick={() => {
-                      milestoneForm.resetFields();
-                      setMilestoneModalOpen(true);
-                    }}
-                  >
-                    Create Milestones
-                  </Button>
+                  classData?.status !== "Completed" && (
+                    <Button
+                      type="default"
+                      icon={<Plus className="w-4 h-4" />}
+                      onClick={() => {
+                        milestoneForm.resetFields();
+                        setMilestoneModalOpen(true);
+                      }}
+                    >
+                      Create Milestones
+                    </Button>
+                  )
                 }
               >
                 {groups.length > 0 ? (
@@ -897,6 +903,7 @@ export default function InstructorClassDetail() {
                 students={students}
                 studentsInfo={studentsInfo}
                 onCreateRandomGroups={() => setRandomGroupModalOpen(true)}
+                classStatus={classData?.status}
               />
             ),
           },
@@ -913,20 +920,22 @@ export default function InstructorClassDetail() {
                 loading={loading}
                 title="Class Syllabuses"
                 extra={
-                  <Space>
-                    <Button
-                      type="primary"
-                      onClick={() => {
-                        setSyllabusFormMode("create");
-                        setSelectedSyllabus(null);
-                        syllabusForm.resetFields();
-                        fileListForm.resetFields();
-                        setSyllabusModalOpen(true);
-                      }}
-                    >
-                      Add Syllabus
-                    </Button>
-                  </Space>
+                  classData?.status !== "Completed" && (
+                    <Space>
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          setSyllabusFormMode("create");
+                          setSelectedSyllabus(null);
+                          syllabusForm.resetFields();
+                          fileListForm.resetFields();
+                          setSyllabusModalOpen(true);
+                        }}
+                      >
+                        Add Syllabus
+                      </Button>
+                    </Space>
+                  )
                 }
               >
                 {syllabuses.length > 0 ? (
@@ -995,41 +1004,43 @@ export default function InstructorClassDetail() {
                                     setSyllabusDetailOpen(true);
                                   },
                                 },
-                                {
-                                  key: "edit",
-                                  label: "Edit",
-                                  onClick: () => {
-                                    setSyllabusFormMode("edit");
-                                    setSelectedSyllabus(record);
-                                    syllabusForm.setFieldsValue({
-                                      title: record.title,
-                                      version: record.version,
-                                      academicYear: record.academicYear,
-                                    });
-                                    setSyllabusModalOpen(true);
+                                ...(classData?.status !== "Completed" ? [
+                                  {
+                                    key: "edit",
+                                    label: "Edit",
+                                    onClick: () => {
+                                      setSyllabusFormMode("edit");
+                                      setSelectedSyllabus(record);
+                                      syllabusForm.setFieldsValue({
+                                        title: record.title,
+                                        version: record.version,
+                                        academicYear: record.academicYear,
+                                      });
+                                      setSyllabusModalOpen(true);
+                                    },
                                   },
-                                },
-                                {
-                                  type: "divider",
-                                },
-                                {
-                                  key: "delete",
-                                  label: (
-                                    <Popconfirm
-                                      title="Delete Syllabus"
-                                      description="Are you sure you want to delete this syllabus?"
-                                      onConfirm={() =>
-                                        handleDeleteSyllabus(record.syllabusId)
-                                      }
-                                      okText="Delete"
-                                      okType="danger"
-                                      cancelText="Cancel"
-                                    >
-                                      <span>Delete</span>
-                                    </Popconfirm>
-                                  ),
-                                  danger: true,
-                                },
+                                  {
+                                    type: "divider" as const,
+                                  },
+                                  {
+                                    key: "delete",
+                                    label: (
+                                      <Popconfirm
+                                        title="Delete Syllabus"
+                                        description="Are you sure you want to delete this syllabus?"
+                                        onConfirm={() =>
+                                          handleDeleteSyllabus(record.syllabusId)
+                                        }
+                                        okText="Delete"
+                                        okType="danger"
+                                        cancelText="Cancel"
+                                      >
+                                        <span>Delete</span>
+                                      </Popconfirm>
+                                    ),
+                                    danger: true,
+                                  },
+                                ] : []),
                               ],
                             }}
                             trigger={["click"]}
@@ -1068,13 +1079,15 @@ export default function InstructorClassDetail() {
                 loading={loading}
                 title="Project Topics"
                 extra={
-                  <Button
-                    type="primary"
-                    icon={<Plus className="w-4 h-4" />}
-                    onClick={handleCreateTemplate}
-                  >
-                    Create Topic
-                  </Button>
+                  classData?.status !== "Completed" && (
+                    <Button
+                      type="primary"
+                      icon={<Plus className="w-4 h-4" />}
+                      onClick={handleCreateTemplate}
+                    >
+                      Create Topic
+                    </Button>
+                  )
                 }
               >
                 {templates.length > 0 ? (
@@ -1104,43 +1117,45 @@ export default function InstructorClassDetail() {
                 loading={loading}
                 title="Class Configuration"
                 extra={
-                  <Button
-                    icon={<Pencil className="w-4 h-4" />}
-                    onClick={() => {
-                      if (config) {
-                        configForm.setFieldsValue({
-                          maxGroupsAllowed: config.maxGroupsAllowed,
-                          minMembersPerGroup: config.minMembersPerGroup,
-                          maxMembersPerGroup: config.maxMembersPerGroup,
-                          groupFormationDeadline: config.groupFormationDeadline
-                            ? (dayjs(config.groupFormationDeadline) as any)
-                            : null,
-                          projectCreationDeadline: config.projectCreationDeadline
-                            ? (dayjs(config.projectCreationDeadline) as any)
-                            : null,
-                          allowStudentCreateGroup:
-                            config.allowStudentCreateGroup,
-                          submissionStartDate: config.submissionStartDate
-                            ? (dayjs(config.submissionStartDate) as any)
-                            : null,
-                          submissionDeadline: config.submissionDeadline
-                            ? (dayjs(config.submissionDeadline) as any)
-                            : null,
-                          allowLateSubmission: config.allowLateSubmission,
-                          lateSubmissionPenaltyPercent: config.lateSubmissionPenaltyPercent,
-                          editWindowStartDate: config.editWindowStartDate
-                            ? (dayjs(config.editWindowStartDate) as any)
-                            : null,
-                          editWindowEndDate: config.editWindowEndDate
-                            ? (dayjs(config.editWindowEndDate) as any)
-                            : null,
-                        });
-                      }
-                      setConfigModalOpen(true);
-                    }}
-                  >
-                    Edit Config
-                  </Button>
+                  classData?.status !== "Completed" && (
+                    <Button
+                      icon={<Pencil className="w-4 h-4" />}
+                      onClick={() => {
+                        if (config) {
+                          configForm.setFieldsValue({
+                            maxGroupsAllowed: config.maxGroupsAllowed,
+                            minMembersPerGroup: config.minMembersPerGroup,
+                            maxMembersPerGroup: config.maxMembersPerGroup,
+                            groupFormationDeadline: config.groupFormationDeadline
+                              ? (dayjs(config.groupFormationDeadline) as any)
+                              : null,
+                            projectCreationDeadline: config.projectCreationDeadline
+                              ? (dayjs(config.projectCreationDeadline) as any)
+                              : null,
+                            allowStudentCreateGroup:
+                              config.allowStudentCreateGroup,
+                            submissionStartDate: config.submissionStartDate
+                              ? (dayjs(config.submissionStartDate) as any)
+                              : null,
+                            submissionDeadline: config.submissionDeadline
+                              ? (dayjs(config.submissionDeadline) as any)
+                              : null,
+                            allowLateSubmission: config.allowLateSubmission,
+                            lateSubmissionPenaltyPercent: config.lateSubmissionPenaltyPercent,
+                            editWindowStartDate: config.editWindowStartDate
+                              ? (dayjs(config.editWindowStartDate) as any)
+                              : null,
+                            editWindowEndDate: config.editWindowEndDate
+                              ? (dayjs(config.editWindowEndDate) as any)
+                              : null,
+                          });
+                        }
+                        setConfigModalOpen(true);
+                      }}
+                    >
+                      Edit Config
+                    </Button>
+                  )
                 }
               >
                 {config ? (

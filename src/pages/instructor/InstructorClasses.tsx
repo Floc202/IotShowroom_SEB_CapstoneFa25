@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Tag, Empty, Input, Button, Row, Col, Select, Table, Space, Modal } from "antd";
-import { GraduationCap, Search, Eye, Users, FolderKanban, Calendar, Download, FileSpreadsheet } from "lucide-react";
+import { GraduationCap, Search, Eye, Users, FolderKanban, Calendar, Download, FileSpreadsheet, Clock } from "lucide-react";
 import { getInstructorClasses, getClassGrades, exportClassGrades } from "../../api/instructor";
 import type { InstructorClassItem, ClassGrades } from "../../types/instructor";
 import toast from "react-hot-toast";
@@ -328,6 +328,25 @@ export default function InstructorClasses() {
                       <span className="text-gray-600">{cls.semesterName}</span>
                       <Tag color="blue" className="ml-auto">{cls.semesterCode}</Tag>
                     </div>
+
+                    {cls.startTime && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-gray-400" />
+                        <span className="text-gray-600">{formatVietnamTime(cls.startTime, "DD/MM/YYYY HH:mm")}</span>
+                      </div>
+                    )}
+
+                    {cls.status && (
+                      <div className="flex items-center gap-2">
+                        <Tag color={
+                          cls.status === 'Not Started' ? 'default' : 
+                          cls.status === 'In Progress' ? 'orange' : 
+                          cls.status === 'Completed' ? 'green' : 'default'
+                        }>
+                          {cls.status}
+                        </Tag>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-3 gap-2 pt-2 border-t">
                       <div className="text-center">

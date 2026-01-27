@@ -142,6 +142,19 @@ export const createProjectTemplate = (payload: CreateProjectTemplateRequest) =>
     .post<ApiEnvelope<ProjectTemplate>>(`${BASE}/templates`, payload)
     .then((r) => r.data);
 
+export const importTemplatesFromExcel = (classId: Id, excelFile: File) => {
+  const formData = new FormData();
+  formData.append('excelFile', excelFile);
+  formData.append('classId', classId.toString());
+  return api
+    .post<ApiEnvelope<any>>(`${BASE}/templates/import`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    .then((r) => r.data);
+};
+
 export const getClassTemplates = (classId: Id) =>
   api
     .get<ApiEnvelope<ProjectTemplate[]>>(`${BASE}/classes/${classId}/templates`)

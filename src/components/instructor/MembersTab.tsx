@@ -8,6 +8,7 @@ interface MembersTabProps {
   students: StudentWithGroup[];
   studentsInfo: StudentsWithGroupsResponse | null;
   onCreateRandomGroups: () => void;
+  classStatus?: "Not Started" | "In Progress" | "Completed";
 }
 
 export default function MembersTab({
@@ -15,6 +16,7 @@ export default function MembersTab({
   students,
   studentsInfo,
   onCreateRandomGroups,
+  classStatus,
 }: MembersTabProps) {
   return (
     <Card loading={loading} title="Class Members">
@@ -29,7 +31,7 @@ export default function MembersTab({
           </Tag>
         </div>
       )}
-      {studentsInfo && studentsInfo.studentsWithoutGroup > 0 && (
+      {studentsInfo && studentsInfo.studentsWithoutGroup > 0 && classStatus !== "Completed" && (
         <div className="mb-4">
           <Button
             type="primary"

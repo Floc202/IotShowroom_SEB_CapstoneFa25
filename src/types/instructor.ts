@@ -43,6 +43,8 @@ export interface InstructorClassItem {
   totalStudents: number;
   totalGroups: number;
   totalProjects: number;
+  startTime?: string;
+  status?: "Not Started" | "In Progress" | "Completed";
 }
 
 export interface GradeMilestoneRequest {
@@ -89,6 +91,7 @@ export interface InstructorGroupDetail {
   memberCount: number;
   members: InstructorGroupMember[];
   projectCount: number;
+  classStatus?: "Not Started" | "In Progress" | "Completed";
 }
 
 export interface UpdateGroupRequest {

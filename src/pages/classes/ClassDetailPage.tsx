@@ -24,6 +24,9 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { getClassDetail } from "../../api/classes";
 import type { ClassDetail } from "../../types/classes";
+import { getProjectsBySemester } from "../../api/project";
+import type { SemesterProjectDetail } from "../../types/project";
+import GroupProjectInfo from "../../components/group/GroupProjectInfo";
 import dayjs from "dayjs";
 import {
   Users,
@@ -90,6 +93,8 @@ export default function ClassDetailPage() {
     null,
   );
   const [showImportResult, setShowImportResult] = useState(false);
+  const [groupProjects, setGroupProjects] = useState<SemesterProjectDetail[]>([]);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
 
   const fetchDetail = async () => {
     if (!id) return;
@@ -187,6 +192,23 @@ export default function ClassDetailPage() {
   );
 
   const isAdmin = user?.roleName && user.roleName === ROLES?.ADMIN;
+
+  const handleGroupClick = async (groupId: number) => {
+    try {
+      if (!detail?.semesterId) {
+        toast.error("Semester ID not found");
+        return;
+      }
+      const response = await getProjectsBySemester(detail.semesterId);
+      const semesterProjects = response.data?.projects || [];
+      const filteredProjects = semesterProjects.filter(p => p.groupId === groupId);
+      setGroupProjects(filteredProjects);
+      setProjectModalOpen(true);
+    } catch (e) {
+      toast.error(getErrorMessage(e));
+      setGroupProjects([]);
+    }
+  };
 
   const openAddModal = () => {
     setSelectedStudentIds([]);
@@ -511,40 +533,47 @@ export default function ClassDetailPage() {
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
               />
             ) : (
-              <List
-                dataSource={detail.groups}
-                itemLayout="horizontal"
-                pagination={{ pageSize: 5 }}
-                renderItem={(g) => (
-                  <List.Item className="hover:bg-gray-50 transition-colors duration-200 cursor-pointer p-2 rounded-lg item-lists">
-                    <List.Item.Meta
-                      title={
-                        <span className="font-semibold text-base text-blue-700">
-                          {g.groupName}
-                        </span>
-                      }
-                      description={
-                        <div className="text-sm text-gray-500 space-y-1 mt-1">
-                          <p className="flex items-center">
-                            <UserCheck
-                              size={14}
-                              className="mr-1 text-orange-500"
-                            />
-                            <strong>Leader:</strong>&nbsp;
-                            {g.leaderName ?? "—"}
-                          </p>
-                          <div className="flex gap-4">
-                            <Tag color="cyan">Members: {g.memberCount}</Tag>
-                            <Tag color="magenta">
-                              Projects: {g.projectCount}
-                            </Tag>
-                          </div>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
+              <>
+                <List
+                  dataSource={detail.groups}
+                  itemLayout="horizontal"
+                  pagination={{ pageSize: 5 }}
+                  renderItem={(g) => (
+                    <div key={g.groupId}>
+                      <List.Item 
+                        className="hover:bg-gray-50 transition-colors duration-200 cursor-pointer p-2 rounded-lg item-lists"
+                        onClick={() => handleGroupClick(g.groupId)}
+                      >
+                        <List.Item.Meta
+                          title={
+                            <span className="font-semibold text-base text-blue-700">
+                              {g.groupName}
+                            </span>
+                          }
+                          description={
+                            <div className="text-sm text-gray-500 space-y-1 mt-1">
+                              <p className="flex items-center">
+                                <UserCheck
+                                  size={14}
+                                  className="mr-1 text-orange-500"
+                                />
+                                <strong>Leader:</strong>&nbsp;
+                                {g.leaderName ?? "—"}
+                              </p>
+                              <div className="flex gap-4">
+                                <Tag color="cyan">Members: {g.memberCount}</Tag>
+                                <Tag color="magenta">
+                                  Projects: {g.projectCount}
+                                </Tag>
+                              </div>
+                            </div>
+                          }
+                        />
+                      </List.Item>
+                    </div>
+                  )}
+                />
+              </>
             )}
           </Card>
         </Col>
@@ -1014,6 +1043,35 @@ export default function ClassDetailPage() {
               </div>
             )}
           </div>
+        )}
+      </Modal>
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <Package size={18} /> Group Information
+          </div>
+        }
+        open={projectModalOpen}
+        onCancel={() => {
+          setProjectModalOpen(false);
+        }}
+        style={{ top: 20 }}
+        footer={[
+          <Button key="close" onClick={() => setProjectModalOpen(false)}>
+            Close
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {groupProjects.length > 0 ? (
+          <div className="space-y-4">
+            {groupProjects.map((project) => (
+              <GroupProjectInfo key={project.projectId} project={project} />
+            ))}
+          </div>
+        ) : (
+          <Empty description="No projects found" />
         )}
       </Modal>
     </div>
