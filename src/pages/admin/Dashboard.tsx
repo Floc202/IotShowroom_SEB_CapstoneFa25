@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, Statistic, Row, Col, List, Tag, Empty, Spin, Typography } from "antd";
+import { Card, Statistic, Row, Col, List, Tag, Empty, Spin, Typography, Select } from "antd";
 import { BookOpen, Users, FolderOpen, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { getAdminOverview, getAdminStatistics, getClassesBySemesterChart, getProjectDistributionChart, getMilestoneCompletionChart } from "../../api/admin";
-import type { AdminOverview, AdminStatistics, ChartResponse } from "../../types/admin";
+import { getAdminOverview, getAdminStatistics, getClassesBySemesterChart, getProjectDistributionChart, getMilestoneCompletionChart, getPassNotPassStatistics } from "../../api/admin";
+import { listSemesters } from "../../api/semesters";
+import type { AdminOverview, AdminStatistics, ChartResponse, PassNotPassStatistics } from "../../types/admin";
+import type { Semester } from "../../types/semesters";
 import toast from "react-hot-toast";
 import { getErrorMessage } from "../../utils/helpers";
 import dayjs from "dayjs";
@@ -19,21 +21,26 @@ export default function Dashboard() {
   const [classesBySemester, setClassesBySemester] = useState<ChartResponse | null>(null);
   const [projectDistribution, setProjectDistribution] = useState<ChartResponse | null>(null);
   const [milestoneCompletion, setMilestoneCompletion] = useState<ChartResponse | null>(null);
+  const [passNotPass, setPassNotPass] = useState<PassNotPassStatistics | null>(null);
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<number | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [selectedSemester]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [overviewRes, statsRes, classesRes, projectsRes, milestonesRes] = await Promise.all([
+      const [overviewRes, statsRes, classesRes, projectsRes, milestonesRes, semestersRes, passNotPassRes] = await Promise.all([
         getAdminOverview(),
         getAdminStatistics(),
         getClassesBySemesterChart(),
         getProjectDistributionChart(),
         getMilestoneCompletionChart(),
+        listSemesters(),
+        getPassNotPassStatistics(selectedSemester),
       ]);
 
       if (overviewRes.isSuccess && overviewRes.data) setOverview(overviewRes.data);
@@ -41,6 +48,8 @@ export default function Dashboard() {
       if (classesRes.isSuccess && classesRes.data) setClassesBySemester(classesRes.data);
       if (projectsRes.isSuccess && projectsRes.data) setProjectDistribution(projectsRes.data);
       if (milestonesRes.isSuccess && milestonesRes.data) setMilestoneCompletion(milestonesRes.data);
+      if (semestersRes.isSuccess && semestersRes.data) setSemesters(semestersRes.data);
+      if (passNotPassRes.isSuccess && passNotPassRes.data) setPassNotPass(passNotPassRes.data);
     } catch (e) {
       toast.error(getErrorMessage(e));
     } finally {
@@ -216,7 +225,7 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      <Card title={milestoneCompletion?.title || "Milestone Completion"}>
+      {/* <Card title={milestoneCompletion?.title || "Milestone Completion"}>
         <ResponsiveContainer width="100%" height={350}>
           <BarChart 
             data={milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : []}
@@ -278,6 +287,135 @@ export default function Dashboard() {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      </Card> */}
+
+      <Card
+        title={
+          <div className="flex items-center justify-between">
+            <span>
+              Student Pass/Not Pass Statistics {selectedSemester ? '(By Semester)' : '(All Semesters)'}
+            </span>
+            <Select
+              style={{ width: 200 }}
+              placeholder="All Semesters"
+              value={selectedSemester}
+              onChange={setSelectedSemester}
+              allowClear
+              onClear={() => setSelectedSemester(undefined)}
+            >
+              {semesters.map((semester) => (
+                <Select.Option key={semester.semesterId} value={semester.semesterId}>
+                  {semester.name} ({semester.code})
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+        }
+        className="!mb-6"
+      >
+        <Row gutter={16}>
+          <Col xs={24} lg={12}>
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold mb-3">
+                {selectedSemester ? 'Selected Semester Statistics' : 'All Semesters Statistics'}
+              </h3>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Card className="bg-blue-50">
+                    <Statistic
+                      title="Total Students"
+                      value={passNotPass?.overall.totalStudents || 0}
+                      valueStyle={{ color: "#1890ff" }}
+                    />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card className="bg-green-50">
+                    <Statistic
+                      title="Passed"
+                      value={passNotPass?.overall.passedStudents || 0}
+                      valueStyle={{ color: "#52c41a" }}
+                    />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card className="bg-red-50">
+                    <Statistic
+                      title="Not Passed"
+                      value={passNotPass?.overall.notPassedStudents || 0}
+                      valueStyle={{ color: "#ff4d4f" }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={passNotPass?.overall.labels.map((label, index) => ({
+                    name: label,
+                    value: passNotPass.overall.values[index],
+                  })) || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry: any) => `${entry.name}: ${entry.value}`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="value"
+                  nameKey="name"
+                >
+                  <Cell fill="#52c41a" />
+                  <Cell fill="#ff4d4f" />
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </Col>
+          <Col xs={24} lg={12}>
+            <h3 className="text-lg font-semibold mb-3">By Semester Breakdown</h3>
+            <ResponsiveContainer width="100%" height={450}>
+              <BarChart 
+                data={passNotPass?.bySemester.map((sem) => ({
+                  name: sem.semesterCode,
+                  fullName: sem.semesterName,
+                  Passed: sem.passedStudents,
+                  "Not Passed": sem.notPassedStudents,
+                  passRate: sem.passRate,
+                })) || []}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip 
+                  content={(props) => {
+                    const { active, payload } = props;
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
+                          <p className="font-semibold text-gray-900 mb-2">{data.fullName}</p>
+                          <p className="text-sm text-green-600">
+                            Passed: <span className="font-medium">{data.Passed}</span>
+                          </p>
+                          <p className="text-sm text-red-600">
+                            Not Passed: <span className="font-medium">{data["Not Passed"]}</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Passed" fill="#52c41a" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="Not Passed" fill="#ff4d4f" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Col>
+        </Row>
       </Card>
 
       <Card

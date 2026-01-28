@@ -1,3 +1,25 @@
+export interface PassNotPassStatistics {
+  overall: {
+    totalStudents: number;
+    passedStudents: number;
+    notPassedStudents: number;
+    passRate: number;
+    labels: string[];
+    values: number[];
+  };
+  bySemester: Array<{
+    semesterId: number;
+    semesterName: string;
+    semesterCode: string;
+    totalStudents: number;
+    passedStudents: number;
+    notPassedStudents: number;
+    passRate: number;
+    labels: string[];
+    values: number[];
+  }>;
+}
+
 export interface AdminOverview {
   totalClasses: number;
   totalInstructors: number;

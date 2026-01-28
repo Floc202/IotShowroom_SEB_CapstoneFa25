@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { getProjectsBySemester } from '../api/project';
 import { listSemesters } from '../api/semesters';
+import { getPublicStatistics, type PublicStatistics } from '../api/public';
 import type { SemesterProjectDetail } from '../types/project';
 import type { Semester } from '../types/semesters';
 import ProjectCard from '../components/project/ProjectCard';
@@ -31,12 +32,20 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Array<SemesterProjectDetail & { semesterId: number }>>([]);
   const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [statistics, setStatistics] = useState<PublicStatistics | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const semestersRes = await listSemesters();
+        const [semestersRes, statsRes] = await Promise.all([
+          listSemesters(),
+          getPublicStatistics()
+        ]);
+        
+        if (statsRes.data.isSuccess && statsRes.data.data) {
+          setStatistics(statsRes.data.data);
+        }
         if (semestersRes.isSuccess && semestersRes.data) {
           setSemesters(semestersRes.data);
           
@@ -87,27 +96,21 @@ const Home = () => {
   const stats = [
     {
       label: 'IoT Projects',
-      value: filteredProjects.length.toString(),
+      value: statistics?.totalProjects.toString() || '0',
       icon: Cpu,
       color: 'from-blue-500 to-blue-600',
     },
     {
       label: 'Active Classes',
-      value: new Set(filteredProjects.map((p) => p.classId)).size.toString(),
+      value: statistics?.activeClasses.toString() || '0',
       icon: GraduationCap,
       color: 'from-emerald-500 to-emerald-600',
     },
     {
       label: 'Live Demos',
-      value: filteredProjects.filter((p) => p.simulations.length > 0).length.toString(),
+      value: statistics?.liveDemos.toString() || '0',
       icon: Radio,
       color: 'from-purple-500 to-purple-600',
-    },
-    {
-      label: 'Connected Devices',
-      value: filteredProjects.reduce((acc, p) => acc + p.simulations.length, 0).toString(),
-      icon: Wifi,
-      color: 'from-amber-500 to-amber-600',
     },
   ];
 
@@ -155,16 +158,16 @@ const Home = () => {
               </div>
             </div>
 
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               {stats.map((stat, index) => {
                 const Icon = stat.icon;
                 return (
-                  <div key={index} className="text-center">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-3`}>
-                      <Icon className="w-6 h-6 text-white" />
+                  <div key={index} className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <div className={`w-16 h-16 bg-gradient-to-br ${stat.color} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                      <Icon className="w-8 h-8 text-white" />
                     </div>
-                    <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
-                    <div className="text-sm text-gray-600 mt-1">{stat.label}</div>
+                    <div className="text-4xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                    <div className="text-base text-gray-600 font-medium">{stat.label}</div>
                   </div>
                 );
               })}

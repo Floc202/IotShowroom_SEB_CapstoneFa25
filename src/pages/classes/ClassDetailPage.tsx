@@ -460,7 +460,7 @@ export default function ClassDetailPage() {
           </div>
         }
         extra={
-          isAdmin ? (
+          isAdmin && detail.status !== "Completed" ? (
             <Button
               type="primary"
               icon={<UserPlus size={16} />}
@@ -626,7 +626,7 @@ export default function ClassDetailPage() {
                   <List.Item
                     className="hover:bg-gray-50 transition-colors duration-200 p-2 pl-10 rounded-lg item-lists"
                     actions={
-                      isAdmin
+                      isAdmin && detail.status !== "Completed"
                         ? [
                             <Popconfirm
                               key="remove"

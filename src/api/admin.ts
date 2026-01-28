@@ -28,6 +28,7 @@ import type {
   UpdateGraderStatusRequest,
   GradingStatistics,
   ImportStudentsResult,
+  PassNotPassStatistics,
 } from "../types/admin";
 
 export const getAdminOverview = () =>
@@ -67,6 +68,13 @@ export const getMilestoneCompletionChart = () =>
         ChartResponse<{ TotalSubmissions: number; CompletionRate: number }>
       >
     >("Admin/dashboard/charts/milestone-completion")
+    .then((r) => r.data);
+
+export const getPassNotPassStatistics = (semesterId?: number) =>
+  api
+    .get<ApiEnvelope<PassNotPassStatistics>>("Admin/statistics/pass-not-pass", {
+      params: semesterId ? { semesterId } : undefined,
+    })
     .then((r) => r.data);
 
 export const getHallOfFame = () =>
