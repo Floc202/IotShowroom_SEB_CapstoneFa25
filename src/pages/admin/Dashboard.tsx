@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, Statistic, Row, Col, List, Tag, Empty, Spin, Typography, Select } from "antd";
 import { BookOpen, Users, FolderOpen, AlertCircle, CheckCircle, Activity } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { getAdminOverview, getAdminStatistics, getClassesBySemesterChart, getProjectDistributionChart, getMilestoneCompletionChart, getPassNotPassStatistics } from "../../api/admin";
+import { getAdminOverview, getAdminStatistics, getClassesBySemesterChart, getProjectDistributionChart, getPassNotPassStatistics } from "../../api/admin";
 import { listSemesters } from "../../api/semesters";
 import type { AdminOverview, AdminStatistics, ChartResponse, PassNotPassStatistics } from "../../types/admin";
 import type { Semester } from "../../types/semesters";
