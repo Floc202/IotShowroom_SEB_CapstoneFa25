@@ -20,7 +20,6 @@ export default function Dashboard() {
   const [statistics, setStatistics] = useState<AdminStatistics | null>(null);
   const [classesBySemester, setClassesBySemester] = useState<ChartResponse | null>(null);
   const [projectDistribution, setProjectDistribution] = useState<ChartResponse | null>(null);
-  const [milestoneCompletion, setMilestoneCompletion] = useState<ChartResponse | null>(null);
   const [passNotPass, setPassNotPass] = useState<PassNotPassStatistics | null>(null);
   const [semesters, setSemesters] = useState<Semester[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<number | undefined>(undefined);
@@ -33,12 +32,11 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [overviewRes, statsRes, classesRes, projectsRes, milestonesRes, semestersRes, passNotPassRes] = await Promise.all([
+      const [overviewRes, statsRes, classesRes, projectsRes, semestersRes, passNotPassRes] = await Promise.all([
         getAdminOverview(),
         getAdminStatistics(),
         getClassesBySemesterChart(),
         getProjectDistributionChart(),
-        getMilestoneCompletionChart(),
         listSemesters(),
         getPassNotPassStatistics(selectedSemester),
       ]);
@@ -47,7 +45,6 @@ export default function Dashboard() {
       if (statsRes.isSuccess && statsRes.data) setStatistics(statsRes.data);
       if (classesRes.isSuccess && classesRes.data) setClassesBySemester(classesRes.data);
       if (projectsRes.isSuccess && projectsRes.data) setProjectDistribution(projectsRes.data);
-      if (milestonesRes.isSuccess && milestonesRes.data) setMilestoneCompletion(milestonesRes.data);
       if (semestersRes.isSuccess && semestersRes.data) setSemesters(semestersRes.data);
       if (passNotPassRes.isSuccess && passNotPassRes.data) setPassNotPass(passNotPassRes.data);
     } catch (e) {
@@ -224,70 +221,6 @@ export default function Dashboard() {
           </Card>
         </Col>
       </Row>
-
-      {/* <Card title={milestoneCompletion?.title || "Milestone Completion"}>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart 
-            data={milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : []}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis 
-              dataKey="label" 
-              type="category"
-              width={280}
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip 
-              content={(props) => {
-                const { active, payload } = props;
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  return (
-                    <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
-                      <p className="font-semibold text-gray-900 mb-2">{data.label}</p>
-                      <p className="text-sm text-gray-600">
-                        Total Submissions: <span className="font-medium text-gray-900">{data.value}</span>
-                      </p>
-                      {data.additionalData?.CompletionRate !== undefined && (
-                        <p className="text-sm text-gray-600">
-                          Completion Rate: <span className="font-medium text-green-600">{data.additionalData.CompletionRate}%</span>
-                        </p>
-                      )}
-                    </div>
-                  );
-                }
-                return null;
-              }}
-            />
-            <Legend 
-              content={() => {
-                const latestData = milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : [];
-                return (
-                  <div className="flex justify-center gap-4 mt-4 flex-wrap">
-                    {latestData.map((entry, index) => (
-                      <div key={`legend-${index}`} className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded" 
-                          style={{ backgroundColor: entry.color || "#1890ff" }}
-                        />
-                        <span className="text-sm text-gray-600">{entry.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }}
-            />
-            <Bar dataKey="value" name="Submissions" radius={[0, 8, 8, 0]}>
-              {(milestoneCompletion?.chartData ? [...milestoneCompletion.chartData].reverse().slice(0, 5) : []).map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color || "#1890ff"} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card> */}
 
       <Card
         title={
