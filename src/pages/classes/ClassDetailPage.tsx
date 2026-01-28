@@ -21,6 +21,7 @@ import {
   Upload,
   Table,
 } from "antd";
+import * as XLSX from 'xlsx';
 import { useNavigate, useParams } from "react-router-dom";
 import { getClassDetail } from "../../api/classes";
 import type { ClassDetail } from "../../types/classes";
@@ -39,6 +40,7 @@ import {
   UserPlus,
   UserMinus,
   FileSpreadsheet,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../providers/AuthProvider";
@@ -192,6 +194,26 @@ export default function ClassDetailPage() {
   );
 
   const isAdmin = user?.roleName && user.roleName === ROLES?.ADMIN;
+
+  const handleDownloadStudentTemplate = () => {
+    const data = [
+      ['Email'],
+      ['student@fpt.edu.vn'],
+      ['student@example.com']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+
+    ws['!cols'] = [
+      { wch: 35 }
+    ];
+
+    XLSX.writeFile(wb, 'student_import_template.xlsx');
+    
+    toast.success('Template downloaded successfully');
+  };
 
   const handleGroupClick = async (groupId: number) => {
     try {
@@ -968,9 +990,19 @@ export default function ClassDetailPage() {
             ) : (
               <div className="space-y-3">
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-800 mb-3">
-                    Excel Format Required:
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-gray-800">
+                      Excel Format Required:
+                    </h4>
+                    <Button
+                      type="primary"
+                      size="small"
+                      icon={<Download size={16} />}
+                      onClick={handleDownloadStudentTemplate}
+                    >
+                      Download Template
+                    </Button>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse border border-gray-300 text-sm">
                       <thead>

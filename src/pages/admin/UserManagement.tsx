@@ -19,6 +19,7 @@ import {
   Row,
   Col,
 } from "antd";
+import * as XLSX from 'xlsx';
 import {
   Plus,
   Edit,
@@ -32,6 +33,7 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  Download,
 } from "lucide-react";
 import type { ColumnsType } from "antd/es/table";
 import type { UserItem, CreateUserRequest, UpdateUserRequest } from "../../types/users";
@@ -191,6 +193,31 @@ const UserManagement: React.FC = () => {
     } finally {
       setImporting(false);
     }
+  };
+
+  const handleDownloadTemplate = () => {
+    const data = [
+      ['No', 'Fullname', 'Email', 'Phone', 'Role', 'Password'],
+      [1, 'Nguyen Van A', 'nguyenvana@example.com', '0123456789', 'Student', 'Password123@'],
+      [2, 'Tran Thi B', 'tranthib@example.com', '0987654321', 'Instructor', 'Secure456#']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Users');
+
+    ws['!cols'] = [
+      { wch: 5 }, 
+      { wch: 20 }, 
+      { wch: 30 }, 
+      { wch: 15 }, 
+      { wch: 12 }, 
+      { wch: 15 }  
+    ];
+
+    XLSX.writeFile(wb, 'user_import_template.xlsx');
+    
+    toast.success('Template downloaded successfully');
   };
 
   const getRoleName = (roleId: string | number) => {
@@ -520,10 +547,21 @@ const UserManagement: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-medium text-blue-800 mb-2">Instructions:</h4>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-blue-800">Instructions:</h4>
+              <Button
+                type="primary"
+                size="small"
+                icon={<Download size={16} />}
+                onClick={handleDownloadTemplate}
+              >
+                Download Template
+              </Button>
+            </div>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Upload an Excel file (.xlsx or .xls)</li>
-              <li>• Make sure the file contains the required columns</li>
+              <li>• Download the template file to get started</li>
+              <li>• Fill in the user information following the format</li>
+              <li>• Upload the completed Excel file (.xlsx or .xls)</li>
               <li>• The system will validate and import users</li>
             </ul>
           </div>

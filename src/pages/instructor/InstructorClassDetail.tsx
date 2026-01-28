@@ -24,6 +24,7 @@ import {
   Upload,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
+import * as XLSX from 'xlsx';
 import {
   ArrowLeft,
   Settings,
@@ -36,6 +37,8 @@ import {
   Plus,
   Trash2,
   Upload as UploadIcon,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   getInstructorClasses,
@@ -48,6 +51,7 @@ import {
   updateProjectTemplate,
   deleteProjectTemplate,
   getTemplateRegistrations,
+  importTemplatesFromExcel,
   getClassStudentsWithGroups,
   createRandomGroups,
 } from "../../api/instructor";
@@ -91,6 +95,59 @@ import RandomGroupModal from "../../components/instructor/RandomGroupModal";
 export default function InstructorClassDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const handleDownloadTemplateFormat = () => {
+    const data = [
+      ['No', 'Title', 'Description', 'Component', 'Max Groups'],
+      [1, 'IoT Smart Home', 'Smart home automation system', 'Hardware', 5],
+      [2, 'Weather Station', 'Real-time weather monitoring', 'Sensors', 3]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Templates');
+
+    ws['!cols'] = [
+      { wch: 5 },
+      { wch: 25 },
+      { wch: 40 },
+      { wch: 15 },
+      { wch: 12 }
+    ];
+
+    XLSX.writeFile(wb, 'project_template_format.xlsx');
+    toast.success('Template format downloaded successfully');
+  };
+
+  const handleImportTemplates = async () => {
+    if (!id || importFileList.length === 0) {
+      toast.error('Please select an Excel file');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const file = importFileList[0].originFileObj;
+      const res = await importTemplatesFromExcel(Number(id), file);
+      
+      if (res.isSuccess) {
+        toast.success(res.message || 'Templates imported successfully');
+        setImportTemplateModalOpen(false);
+        setImportFileList([]);
+        
+        const templatesRes = await getClassTemplates(parseInt(id));
+        if (templatesRes.isSuccess) {
+          setTemplates(templatesRes.data || []);
+        }
+      } else {
+        toast.error(res.message || 'Import failed');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to import templates');
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const [classData, setClassData] = useState<InstructorClassItem | null>(null);
   const [config, setConfig] = useState<ClassConfig | null>(null);
@@ -136,6 +193,9 @@ export default function InstructorClassDetail() {
   const [randomGroupModalOpen, setRandomGroupModalOpen] = useState(false);
   const [randomGroupResult, setRandomGroupResult] = useState<RandomGroupCreationResult | null>(null);
   const [randomGroupLoading, setRandomGroupLoading] = useState(false);
+  const [importTemplateModalOpen, setImportTemplateModalOpen] = useState(false);
+  const [importFileList, setImportFileList] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const { TextArea } = Input;
   const [milestoneForm] = Form.useForm<BulkCreateMilestoneRequest>();
@@ -1080,13 +1140,22 @@ export default function InstructorClassDetail() {
                 title="Project Topics"
                 extra={
                   classData?.status !== "Completed" && (
-                    <Button
-                      type="primary"
-                      icon={<Plus className="w-4 h-4" />}
-                      onClick={handleCreateTemplate}
-                    >
-                      Create Topic
-                    </Button>
+                    <Space>
+                      <Button
+                        type="default"
+                        icon={<FileSpreadsheet className="w-4 h-4" />}
+                        onClick={() => setImportTemplateModalOpen(true)}
+                      >
+                        Import Excel
+                      </Button>
+                      <Button
+                        type="primary"
+                        icon={<Plus className="w-4 h-4" />}
+                        onClick={handleCreateTemplate}
+                      >
+                        Create Topic
+                      </Button>
+                    </Space>
                   )
                 }
               >
@@ -1902,6 +1971,135 @@ export default function InstructorClassDetail() {
         }}
         onCreate={handleCreateRandomGroups}
       />
+
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Import Project Topics from Excel
+          </div>
+        }
+        open={importTemplateModalOpen}
+        onCancel={() => {
+          setImportTemplateModalOpen(false);
+          setImportFileList([]);
+        }}
+        width={800}
+        style={{ top: 20 }}
+        footer={[
+          <Button
+            key="cancel"
+            onClick={() => {
+              setImportTemplateModalOpen(false);
+              setImportFileList([]);
+            }}
+          >
+            Cancel
+          </Button>,
+          <Button
+            key="import"
+            type="primary"
+            loading={importing}
+            onClick={handleImportTemplates}
+            disabled={importFileList.length === 0}
+          >
+            Import
+          </Button>,
+        ]}
+        destroyOnClose
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-blue-800">Instructions:</h4>
+              <Button
+                type="primary"
+                size="small"
+                icon={<Download className="w-4 h-4" />}
+                onClick={handleDownloadTemplateFormat}
+              >
+                Download Template
+              </Button>
+            </div>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Download the template file to get started</li>
+              <li>• Fill in the project topic information following the format</li>
+              <li>• Upload the completed Excel file (.xlsx or .xls)</li>
+              <li>• The system will validate and import topics</li>
+            </ul>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-medium text-gray-800 mb-3">Excel Format Required:</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                <thead>
+                  <tr className="bg-gray-200">
+                    <th className="border border-gray-300 px-3 py-2 text-left font-semibold">No</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Title</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Description</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Component</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Max Groups</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="bg-white">
+                    <td className="border border-gray-300 px-3 py-2">1</td>
+                    <td className="border border-gray-300 px-3 py-2">IoT Smart Home</td>
+                    <td className="border border-gray-300 px-3 py-2">Smart home automation system</td>
+                    <td className="border border-gray-300 px-3 py-2">Hardware</td>
+                    <td className="border border-gray-300 px-3 py-2">5</td>
+                  </tr>
+                  <tr className="bg-gray-50">
+                    <td className="border border-gray-300 px-3 py-2">2</td>
+                    <td className="border border-gray-300 px-3 py-2">Weather Station</td>
+                    <td className="border border-gray-300 px-3 py-2">Real-time weather monitoring</td>
+                    <td className="border border-gray-300 px-3 py-2">Sensors</td>
+                    <td className="border border-gray-300 px-3 py-2">3</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-600 mt-3">
+              <strong>Note:</strong> All columns are required. Max Groups must be a positive number.
+            </p>
+          </div>
+
+          <Upload.Dragger
+            fileList={importFileList}
+            beforeUpload={(file: File) => {
+              const isExcel =
+                file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                file.type === 'application/vnd.ms-excel';
+              if (!isExcel) {
+                toast.error('You can only upload Excel files!');
+                return false;
+              }
+              setImportFileList([{
+                ...file,
+                uid: file.name,
+                name: file.name,
+                originFileObj: file,
+              }]);
+              return false;
+            }}
+            onRemove={() => {
+              setImportFileList([]);
+            }}
+            maxCount={1}
+          >
+            <p className="ant-upload-drag-icon">
+              <FileSpreadsheet size={48} className="mx-auto text-gray-400" />
+            </p>
+            <p className="ant-upload-text">
+              Click or drag Excel file to this area to upload
+            </p>
+            <p className="ant-upload-hint">
+              Support for single Excel file upload only (.xlsx or .xls)
+            </p>
+          </Upload.Dragger>
+        </div>
+      </Modal>
     </div>
   );
 }
