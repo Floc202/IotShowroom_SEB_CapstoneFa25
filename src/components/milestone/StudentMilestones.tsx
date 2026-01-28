@@ -27,7 +27,7 @@ import type {
   SubmissionHistory,
 } from "../../types/submission";
 import toast from "react-hot-toast";
-import { getErrorMessage } from "../../utils/helpers";
+import { getErrorMessage, formatVietnamTime } from "../../utils/helpers";
 import dayjs from "dayjs";
 
 interface StudentMilestonesProps {
@@ -312,8 +312,8 @@ export default function StudentMilestones({
       width: 80,
       align: "center" as const,
       render: (_: any, record: Milestone) => {
-        const submissionHistory = submissions.get(record.milestoneId);
-        const hasSubmissions = submissionHistory && submissionHistory.allVersions && submissionHistory.allVersions.length > 0;
+        // const submissionHistory = submissions.get(record.milestoneId);
+        // const hasSubmissions = submissionHistory && submissionHistory.allVersions && submissionHistory.allVersions.length > 0;
         
         const menuItems: MenuProps["items"] = [
           {
@@ -322,7 +322,9 @@ export default function StudentMilestones({
             icon: <Eye className="w-4 h-4" />,
             onClick: () => handleViewSubmission(record),
           },
-          ...(isLeader && !hasSubmissions
+          ...(isLeader && 
+            // !hasSubmissions && 
+            record.status.toLowerCase() !== "closed"
             ? [
                 {
                   key: "submit",
@@ -491,11 +493,11 @@ export default function StudentMilestones({
                                 <Tag color="blue">Latest</Tag>
                               )}
                             </div>
-                            <span className="text-sm text-gray-500">
+                            {/* <span className="text-sm text-gray-500">
                               {dayjs(submission.submittedAt).format(
                                 "DD/MM/YYYY HH:mm"
                               )}
-                            </span>
+                            </span> */}
                           </div>
                           
                           <div className="space-y-2 mb-3">
@@ -542,7 +544,7 @@ export default function StudentMilestones({
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="text-xs text-gray-500">
-                                        {dayjs(file.uploadedAt).format("DD/MM HH:mm")}
+                                        {formatVietnamTime(file.uploadedAt, "DD/MM HH:mm")}
                                       </span>
                                       {isLeader && isLatest && (
                                         <Popconfirm

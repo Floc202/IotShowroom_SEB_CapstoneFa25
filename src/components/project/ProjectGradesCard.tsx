@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Card, Descriptions, Table, Tag, Empty, Statistic, Row, Col } from "antd";
+import { Card, Descriptions, Table, Tag, Empty } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { Award, TrendingUp, Target } from "lucide-react";
+import { Award } from "lucide-react";
 import { getStudentProjectGrades } from "../../api/student";
 import { getProjectGrades } from "../../api/instructor";
 import type { StudentProjectGrades, StudentMilestoneGrade } from "../../types/student";
@@ -148,72 +148,70 @@ export default function ProjectGradesCard({ projectId, role }: ProjectGradesCard
         }
       >
         {studentGrades ? (
-          <>
-            <Row gutter={16} className="mb-6">
-              <Col xs={24} sm={8}>
-                <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-                  <Statistic
-                    title="Overall Grade"
-                    value={studentGrades.overallGrade ?? "—"}
-                    prefix={<Award className="w-5 h-5" />}
-                    valueStyle={{ 
-                      color: studentGrades.overallGrade !== null 
-                        ? studentGrades.overallGrade >= 50 ? "#3f8600" : "#cf1322"
-                        : "#666"
-                    }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card className="bg-gradient-to-br from-green-50 to-green-100">
-                  <Statistic
-                    title="Total Weighted Score"
-                    value={studentGrades.gradeBreakdown.totalWeightedScore}
-                    prefix={<TrendingUp className="w-5 h-5" />}
-                    suffix={`/ ${studentGrades.gradeBreakdown.totalWeight}`}
-                    valueStyle={{ color: "#3f8600" }}
-                  />
-                </Card>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
-                  <Statistic
-                    title="Projected Final"
-                    value={studentGrades.gradeBreakdown.projectedFinalGrade}
-                    prefix={<Target className="w-5 h-5" />}
-                    valueStyle={{ color: "#722ed1" }}
-                  />
-                </Card>
-              </Col>
-            </Row>
+          studentGrades.projectStatus === "Completed" ? (
+            <>
+              {/* <Row gutter={16} className="mb-6">
+                <Col xs={24} sm={12}>
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100">
+                    <Statistic
+                      title="Total Weighted Score"
+                      value={studentGrades.gradeBreakdown.totalWeightedScore}
+                      prefix={<TrendingUp className="w-5 h-5" />}
+                      suffix={`/ ${studentGrades.gradeBreakdown.totalWeight}`}
+                      valueStyle={{ color: "#3f8600" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
+                    <Statistic
+                      title="Projected Final"
+                      value={studentGrades.gradeBreakdown.projectedFinalGrade}
+                      prefix={<Target className="w-5 h-5" />}
+                      valueStyle={{ color: "#722ed1" }}
+                    />
+                  </Card>
+                </Col>
+              </Row> */}
 
-            <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small" className="mb-4">
-              <Descriptions.Item label="Project">
-                {studentGrades.projectTitle}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Tag color={getGradeColor(studentGrades.overallGrade)}>
-                  {studentGrades.projectStatus}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Class">
-                {studentGrades.className}
-              </Descriptions.Item>
-              <Descriptions.Item label="Semester">
-                {studentGrades.semesterName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Group">
-                {studentGrades.groupName}
-              </Descriptions.Item>
-            </Descriptions>
+              <Descriptions bordered column={{ xs: 1, sm: 2 }} size="small" className="mb-4">
+                <Descriptions.Item label="Project">
+                  {studentGrades.projectTitle}
+                </Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <Tag color={getGradeColor(studentGrades.overallGrade)}>
+                    {studentGrades.projectStatus}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Class">
+                  {studentGrades.className}
+                </Descriptions.Item>
+                <Descriptions.Item label="Semester">
+                  {studentGrades.semesterName}
+                </Descriptions.Item>
+                <Descriptions.Item label="Group">
+                  {studentGrades.groupName}
+                </Descriptions.Item>
+              </Descriptions>
 
-            <Table<StudentMilestoneGrade>
-              rowKey="milestoneId"
-              columns={studentColumns}
-              dataSource={studentGrades.milestones}
-              pagination={false}
+              <Table<StudentMilestoneGrade>
+                rowKey="milestoneId"
+                columns={studentColumns}
+                dataSource={studentGrades.milestones}
+                pagination={false}
+              />
+            </>
+          ) : (
+            <Empty 
+              description={
+                <span>
+                  Grades will be available once the project is completed.
+                  <br />
+                  Current status: <Tag color={getGradeColor(null)}>{studentGrades.projectStatus}</Tag>
+                </span>
+              }
             />
-          </>
+          )
         ) : (
           <Empty description="No grades available yet" />
         )}

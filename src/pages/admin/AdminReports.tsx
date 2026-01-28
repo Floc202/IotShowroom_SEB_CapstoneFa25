@@ -441,8 +441,51 @@ export default function AdminReports() {
                   </Card>
                 </Col>
               </Row>
-              <Card title="Milestone Details">
-                <Empty description="Detailed milestone data visualization" />
+              <Card title="Milestone Completion by Semester">
+                <Table
+                  dataSource={selectedSemester 
+                    ? milestonesReport.completionBySemester.filter(s => s.semesterId === selectedSemester)
+                    : milestonesReport.completionBySemester
+                  }
+                  columns={[
+                    { 
+                      title: "Semester", 
+                      dataIndex: "semesterName", 
+                      key: "semesterName",
+                      render: (text: string) => <span className="font-medium">{text}</span>
+                    },
+                    { 
+                      title: "Total Milestones", 
+                      dataIndex: "totalMilestones", 
+                      key: "totalMilestones",
+                      render: (val: number) => <Tag color="blue">{val}</Tag>
+                    },
+                    { 
+                      title: "Completed", 
+                      dataIndex: "completed", 
+                      key: "completed",
+                      render: (val: number) => <Tag color="green">{val}</Tag>
+                    },
+                    { 
+                      title: "Completion Rate", 
+                      dataIndex: "completionRate", 
+                      key: "completionRate",
+                      render: (val: number) => (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2.5">
+                            <div 
+                              className="bg-green-600 h-2.5 rounded-full" 
+                              style={{ width: `${val}%` }}
+                            />
+                          </div>
+                          <span className="font-medium min-w-[50px]">{val.toFixed(1)}%</span>
+                        </div>
+                      ),
+                    },
+                  ]}
+                  rowKey="semesterId"
+                  pagination={false}
+                />
               </Card>
             </>
           ) : (
@@ -458,7 +501,7 @@ export default function AdminReports() {
           ) : gradesReport ? (
             <>
               <Row gutter={16} className="mb-6">
-                <Col xs={24} sm={6}>
+                <Col xs={24} sm={8} md={6}>
                   <Card>
                     <Statistic
                       title="Graded Projects"
@@ -468,7 +511,7 @@ export default function AdminReports() {
                     />
                   </Card>
                 </Col>
-                <Col xs={24} sm={6}>
+                <Col xs={24} sm={8} md={6}>
                   <Card>
                     <Statistic
                       title="Average Grade"
@@ -479,7 +522,7 @@ export default function AdminReports() {
                     />
                   </Card>
                 </Col>
-                <Col xs={24} sm={6}>
+                <Col xs={24} sm={8} md={6}>
                   <Card>
                     <Statistic
                       title="Highest Grade"
@@ -490,7 +533,18 @@ export default function AdminReports() {
                     />
                   </Card>
                 </Col>
-                <Col xs={24} sm={6}>
+                <Col xs={24} sm={8} md={6}>
+                  <Card>
+                    <Statistic
+                      title="Lowest Grade"
+                      value={gradesReport.lowestGrade}
+                      precision={2}
+                      prefix={<Award className="w-5 h-5" />}
+                      valueStyle={{ color: "#ff4d4f" }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={8} md={6}>
                   <Card>
                     <Statistic
                       title="Median Grade"
@@ -502,8 +556,43 @@ export default function AdminReports() {
                   </Card>
                 </Col>
               </Row>
-              <Card title="Grade Distribution">
-                <Empty description="Grade range visualization" />
+              <Card title="Grade Distribution by Ranges">
+                <Table
+                  dataSource={gradesReport.gradeRanges}
+                  columns={[
+                    { 
+                      title: "Grade Range", 
+                      dataIndex: "range", 
+                      key: "range",
+                      render: (text: string) => <span className="font-medium">{text}</span>
+                    },
+                    { 
+                      title: "Count", 
+                      dataIndex: "count", 
+                      key: "count",
+                      sorter: (a: any, b: any) => b.count - a.count,
+                      render: (val: number) => <Tag color="blue">{val}</Tag>
+                    },
+                    { 
+                      title: "Percentage", 
+                      dataIndex: "percentage", 
+                      key: "percentage",
+                      render: (val: number) => (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2.5">
+                            <div 
+                              className="bg-blue-600 h-2.5 rounded-full" 
+                              style={{ width: `${val}%` }}
+                            />
+                          </div>
+                          <span className="font-medium min-w-[50px]">{val.toFixed(1)}%</span>
+                        </div>
+                      ),
+                    },
+                  ]}
+                  rowKey="range"
+                  pagination={false}
+                />
               </Card>
             </>
           ) : (

@@ -229,7 +229,13 @@ export interface MilestoneProgressReport {
   overallCompletionRate: number;
   averageGrade: number;
   completionByMilestone: Array<any>;
-  completionBySemester: Array<any>;
+  completionBySemester: Array<{
+    semesterId: number;
+    semesterName: string | null;
+    totalMilestones: number;
+    completed: number;
+    completionRate: number;
+  }>;
 }
 
 export interface GradesDistributionReport {
@@ -238,7 +244,11 @@ export interface GradesDistributionReport {
   highestGrade: number;
   lowestGrade: number;
   medianGrade: number;
-  gradeRanges: Array<any>;
+  gradeRanges: Array<{
+    range: string;
+    count: number;
+    percentage: number;
+  }>;
   gradesBySemester: Array<any>;
   topProjects: Array<any>;
 }
